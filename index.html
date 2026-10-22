@@ -169,7 +169,7 @@
     <div class="card">
         <button class="clear-btn-top" onclick="clearText()">🗑️ テキストを消去</button>
         <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
-        <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
+        <textarea id="inputText" placeholder=""></textarea>
         <br><br>
         <button id="submitBtn" onclick="generateComment()">🚀 コメントを作成する</button>
         <div id="status"></div>
@@ -179,7 +179,7 @@
         <label>✨ 完成したコメント：</label>
         <div class="result-container">
             <div class="copy-btn-header">
-                <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
+                <button id="copyBtn" class="copy-btn" onclick="copyResult()">COPY</button>
             </div>
             <div class="result-box" id="resultText"></div>
         </div>
@@ -246,7 +246,7 @@
             }
 
             // 状態更新
-            statusDiv.innerHTML = '<div class="loading">⏳ すべての質問・ポイントから複数の観点でコメントを作成中... 少々お待ちください。</div>';
+            statusDiv.innerHTML = '<div class="loading">⏳ 作成中...</div>';
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
