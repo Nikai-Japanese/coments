@@ -79,11 +79,20 @@
             background-color: #adb5bd;
             cursor: not-allowed;
         }
-        .clear-btn {
+        .clear-btn-top {
             background-color: #6c757d;
-            margin-top: 10px;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 15px;
+            transition: background-color 0.2s;
         }
-        .clear-btn:hover {
+        .clear-btn-top:hover {
             background-color: #5a6268;
         }
         .result-box {
@@ -123,11 +132,11 @@
     </div>
 
     <div class="card">
+        <button class="clear-btn-top" onclick="clearText()">🗑️ テキストを消去</button>
         <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
         <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
         <br><br>
         <button id="submitBtn" onclick="generateComment()">🚀 コメントを作成する</button>
-        <button class="clear-btn" onclick="clearText()">🗑️ テキストを消去</button>
         <div id="status"></div>
     </div>
 
