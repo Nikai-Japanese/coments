@@ -109,7 +109,7 @@
 
     <script>
         // ★ここにあなたの Gemini API キーをそのまま貼り付けます★
-        const API_KEY = "AIzaSyD44U96p5LDERiSEF8bEmCVmaIU8kuPDLk";
+        const API_KEY = "ここにあなたのAPIキーを貼り付ける";
 
         async function generateComment() {
             const inputText = document.getElementById("inputText").value.trim();
@@ -118,7 +118,7 @@
             const resultText = document.getElementById("resultText");
             const submitBtn = document.getElementById("submitBtn");
 
-            if (!API_KEY || API_KEY === "ここにあなたのAPIキーを貼り付ける") {
+            if (!API_KEY || API_KEY === "AIzaSyD44U96p5LDERiSEF8bEmCVmaIU8kuPDLk") {
                 statusDiv.innerHTML = '<div class="error">⚠️ HTMLコード内の API_KEY をご自身のキーに書き換えてください。</div>';
                 return;
             }
@@ -155,8 +155,8 @@
 
             const promptText = `以下のテキストをもとに、集会用の素晴らしいインドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
 
-            // Gemini API呼び出し (REST API)
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+            // Gemini API呼び出し (モデルを gemini-3.8-flash に更新)
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${API_KEY}`;
 
             const requestBody = {
                 systemInstruction: {
