@@ -95,44 +95,53 @@
         .clear-btn-top:hover {
             background-color: #5a6268;
         }
+        
+        /* 結果ボックス＆洗練された右上固定コピーボタン */
         .result-container {
             position: relative;
+            background-color: #272822;
+            border-radius: 8px;
+            max-height: 550px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .copy-btn-header {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 15px 0 0;
+            z-index: 20;
+            pointer-events: none; /* 下の要素のスクロールを妨げない */
         }
         .copy-btn {
-            position: sticky;
-            top: 15px;
-            float: right;
-            margin-right: 15px;
-            margin-top: 15px;
-            z-index: 10;
-            background-color: #4f545c;
-            color: #ffffff;
-            border: none;
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.15);
+            color: #f8f8f2;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(4px);
             padding: 6px 14px;
-            font-size: 13px;
-            font-weight: bold;
-            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            transition: background-color 0.2s;
+            width: auto;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
         .copy-btn:hover {
-            background-color: #606770;
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
         }
         .result-box {
-            background-color: #272822;
             color: #f8f8f2;
-            padding: 20px;
-            border-radius: 6px;
+            padding: 5px 20px 20px 20px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 15px;
             line-height: 1.6;
-            margin-top: 10px;
-            overflow-x: auto;
-            max-height: 500px;
-            overflow-y: auto;
             white-space: pre-wrap;
         }
+        
         .error {
             color: #e03131;
             font-weight: bold;
@@ -160,7 +169,7 @@
     <div class="card">
         <button class="clear-btn-top" onclick="clearText()">🗑️ テキストを消去</button>
         <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
-        <textarea id="inputText"></textarea>
+        <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
         <br><br>
         <button id="submitBtn" onclick="generateComment()">🚀 コメントを作成する</button>
         <div id="status"></div>
@@ -169,7 +178,9 @@
     <div class="card" id="resultCard" style="display: none;">
         <label>✨ 完成したコメント：</label>
         <div class="result-container">
-            <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
+            <div class="copy-btn-header">
+                <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
+            </div>
             <div class="result-box" id="resultText"></div>
         </div>
     </div>
@@ -204,11 +215,13 @@
 
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const copyBtn = document.getElementById("copyBtn");
-                copyBtn.textContent = "✅ コピーしました！";
+                copyBtn.textContent = "✅ コピー完了！";
                 copyBtn.style.backgroundColor = "#20c997";
+                copyBtn.style.borderColor = "#20c997";
                 setTimeout(() => {
                     copyBtn.textContent = "📋 すべてコピー";
-                    copyBtn.style.backgroundColor = "#4f545c";
+                    copyBtn.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
+                    copyBtn.style.borderColor = "rgba(255, 255, 255, 0.25)";
                 }, 2000);
             }).catch(err => {
                 alert("コピーに失敗しました: " + err);
@@ -237,7 +250,7 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト
+            // システムプロンプト（質問のインドネシア語併記＆コメントごとの対出力ルール強化）
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
@@ -247,21 +260,37 @@
 
 【出力ルール】
 1. 各コメントは自然で上品、比較的簡単かつ丁寧なインドネシア語表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
-2. 各質問に対するコメントは異なった観点から2-3つ書き出すこと。
+2. 各質問に対するコメントは異なった観点から2〜3つ書き出すこと。
 3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
 4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（例：Paulus, Filemon, Onesimus, Yehuwa, Sidang）。教会用語は使用しない。
 5. 人を指す場合は orang、それ以外の事柄・方法・点は ini / hal ini / dengan cara ini を適切に使い分ける。
 6. 略語（yg など）は使わず、正式な表記（yang など）にする。
 7. カタカナ発音ガイドは出力しない。
-8. 出力は、見つかった質問・ポイントごとに以下の形式を繰り返して提示する：
-   ■ 【質問・テーマ〇についてのコメント】
-   ■ インドネシア語（発表用）
-   [ここにインドネシア語本文]
+8. 各質問の見出しには、必ず「インドネシア語の質問文」と「日本語訳」の両方を併記すること。
+9. コメントが複数（2〜3つ）ある場合は、必ず1つのコメントごとに【インドネシア語 ➔ 日本語訳】の順番で交互に出力すること。
 
-   ■ 日本語訳（内容確認用）
-   [ここに日本語訳]
+【出力フォーマット】
+■ 【質問〇 / Pertanyaan 〇】
+[ここに質問のインドネシア語文]
+（日本語訳: [ここに質問の日本語訳]）
 
-9. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
+▼ コメント 1 / Komentar 1
+■ インドネシア語（発表用）
+[1つ目のインドネシア語コメント]
+
+■ 日本語訳（内容確認用）
+[1つ目の日本語訳]
+
+▼ コメント 2 / Komentar 2
+■ インドネシア語（発表用）
+[2つ目のインドネシア語コメント]
+
+■ 日本語訳（内容確認用）
+[2つ目の日本語訳]
+
+（※コメント3がある場合も同様の対形式で出力）
+
+10. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
             const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください：\n\n${inputText}`;
 
@@ -295,22 +324,28 @@
                         .replace(/</g, "&lt;")
                         .replace(/>/g, "&gt;");
 
-                    // 質問・テーマの部分（■ 【...】）の上に横線（<hr>）を自動で挿入し、青色で強調
+                    // 質問の見出し（■ 【...】）の上に横線（<hr>）を自動で挿入し、青色で強調
                     htmlOutput = htmlOutput.replace(
                         /(■\s*【[^】]+】)/g,
-                        '<hr style="border: none; border-top: 1px solid #555; margin: 30px 0 15px 0;"><div style="font-weight: bold; color: #61afef; font-size: 16px; margin-bottom: 8px;">$1</div>'
+                        '<hr style="border: none; border-top: 1px solid #555; margin: 25px 0 15px 0;"><div style="font-weight: bold; color: #61afef; font-size: 16px; margin-bottom: 8px;">$1</div>'
+                    );
+
+                    // コメントの見出し（▼ コメント 1 ...）の装飾
+                    htmlOutput = htmlOutput.replace(
+                        /(▼\s*コメント\s*\d+[^\n]*)/g,
+                        '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
                     );
 
                     // インドネシア語（発表用）の見出しを緑色に装飾
                     htmlOutput = htmlOutput.replace(
                         /(■\s*インドネシア語（発表用）)/g,
-                        '<div style="color: #98c379; font-weight: bold; margin-top: 12px; margin-bottom: 4px;">$1</div>'
+                        '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                     );
 
                     // 日本語訳（内容確認用）の見出しを黄土色に装飾
                     htmlOutput = htmlOutput.replace(
                         /(■\s*日本語訳（内容確認用）)/g,
-                        '<div style="color: #e5c07b; font-weight: bold; margin-top: 12px; margin-bottom: 4px;">$1</div>'
+                        '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                     );
 
                     resultText.innerHTML = htmlOutput;
