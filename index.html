@@ -81,6 +81,44 @@
         .clear-btn:hover {
             background-color: #5a6268;
         }
+
+        /* 画像アップロード領域のスタイル */
+        .image-upload-wrapper {
+            margin-bottom: 12px;
+        }
+        .image-input-label {
+            display: inline-block;
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .image-input-label:hover {
+            background-color: #dee2e6;
+        }
+        .image-preview-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .image-preview {
+            max-height: 80px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+        }
+        .remove-img-btn {
+            background-color: #e03131;
+            color: white;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
         
         /* 結果ボックス＆右上固定コピーボタン */
         .result-container {
@@ -156,6 +194,18 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
+        <!-- 画像アップロード選択欄 -->
+        <div class="image-upload-wrapper">
+            <label class="image-input-label" for="imageInput">
+                📷 スクリーンショット画像を選択（任意）
+            </label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+            <div id="imagePreviewContainer" class="image-preview-container" style="display: none;">
+                <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
+                <button type="button" class="remove-img-btn" onclick="removeImage()">❌ 削除</button>
+            </div>
+        </div>
+
         <textarea id="inputText" placeholder=""></textarea>
         <div class="btn-group">
             <button id="submitBtn" class="btn-primary" onclick="generateComment()">GO!</button>
@@ -175,6 +225,9 @@
     </div>
 
     <script>
+        let selectedBase64Image = null;
+        let selectedMimeType = null;
+
         // ページ読み込み時に保存されたAPIキーを復元
         window.onload = function() {
             const savedKey = localStorage.getItem("gemini_api_key");
@@ -202,11 +255,38 @@
             localStorage.setItem("gemini_api_key", key);
         }
 
+        // 画像選択処理
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedMimeType = file.type;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                selectedBase64Image = dataUrl.split(',')[1]; // Base64純粋データ部分を取得
+                
+                document.getElementById("imagePreview").src = dataUrl;
+                document.getElementById("imagePreviewContainer").style.display = "flex";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 画像削除処理
+        function removeImage() {
+            selectedBase64Image = null;
+            selectedMimeType = null;
+            document.getElementById("imageInput").value = "";
+            document.getElementById("imagePreview").src = "";
+            document.getElementById("imagePreviewContainer").style.display = "none";
+        }
+
         // テキストエリアと結果をすべてクリアする関数
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
             document.getElementById("resultCard").style.display = "none";
+            removeImage();
             document.getElementById("inputText").focus();
         }
 
@@ -242,8 +322,8 @@
                 statusDiv.innerHTML = '<div class="error">⚠️ APIキーを入力してください。</div>';
                 return;
             }
-            if (!inputText) {
-                statusDiv.innerHTML = '<div class="error">⚠️ テキストを入力してください。</div>';
+            if (!inputText && !selectedBase64Image) {
+                statusDiv.innerHTML = '<div class="error">⚠️ テキストまたは画像を入力してください。</div>';
                 return;
             }
 
@@ -256,11 +336,12 @@
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
-【入力テキストの取り扱い】
-・入力テキストにWebサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要な情報（ノイズ）が含まれている場合は完全に無視し、記事の本文・聖句・学習テーマに関する核心部分に注目してください。
+【入力テキスト・画像の取り扱い】
+・入力テキストや画像にWebサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要な情報（ノイズ）が含まれている場合は完全に無視し、記事の本文・聖句・学習テーマ・挿絵や図表に関する核心部分に注目してください。
 ・最初のパート「HARTA DALAM FIRMAN ALLAH」の最初の10分の話については答える必要はありません。完全に無視してください。コメントの作成対象は「2. Permata Rohani」以下のセクションのみです。
 ・「2. Permata Rohani」以下のテキスト内に**複数の質問や異なる段落・テーマ**が含まれている場合は、**すべての質問やポイントを漏らさず見つけ出し、それぞれの質問・ポイントごとに**インドネシア語コメントと日本語訳を作成してください。
 ・「2. Permata Rohani」の「Dari pembacaan Alkitab minggu ini, permata rohani apa yang mau Saudara bagikan?」の答えは、その週の聖書通読範囲内の各章から3つずつ答えを準備してください。興味深い内容ならそれ以上でも構いません。何章何節から引用したかなどもきちんと含めてください。
+・画像が添付されている場合、画像内の挿絵、イラスト、図表、キャプションを読み取り、そこから学べる視覚的な教訓（Pelajaran/Hal yang bisa dipelajari dari gambar）についてもコメントの選択肢として含めてください。
 
 【出力ルール】
 1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔なインドネシア語表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
@@ -297,7 +378,18 @@
 
 11. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            const promptText = `以下のテキストに含まれる「2. Permata Rohani」以降のすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください。必ずダッシュ線で区切って出力してください：\n\n${inputText}`;
+            const promptText = `以下のテキストおよび画像に含まれる「2. Permata Rohani」以降のすべての質問や学習ポイント、挿絵の教訓をもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください。必ずダッシュ線で区切って出力してください：\n\n${inputText}`;
+
+            // リクエストパーツの構築（テキスト ＋ 画像）
+            const parts = [{ text: promptText }];
+            if (selectedBase64Image) {
+                parts.unshift({
+                    inlineData: {
+                        mimeType: selectedMimeType,
+                        data: selectedBase64Image
+                    }
+                });
+            }
 
             // Gemini API呼び出し (gemini-3.8-flash)
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
@@ -307,7 +399,7 @@
                     parts: [{ text: systemInstruction }]
                 },
                 contents: [{
-                    parts: [{ text: promptText }]
+                    parts: parts
                 }]
             };
 
