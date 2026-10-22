@@ -112,7 +112,7 @@
             justify-content: flex-end;
             padding: 10px 15px 0 0;
             z-index: 20;
-            pointer-events: none; /* 下の要素のスクロールを妨げない */
+            pointer-events: none;
         }
         .copy-btn {
             pointer-events: auto;
@@ -211,7 +211,7 @@
         // 結果をすべてコピーする関数
         function copyResult() {
             const resultTextEl = document.getElementById("resultText");
-            const textToCopy = resultTextEl.innerText; // HTMLタグを除いたテキストを取得
+            const textToCopy = resultTextEl.innerText; // テキストとして取得（ダッシュ線もそのままコピーされます）
 
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const copyBtn = document.getElementById("copyBtn");
@@ -250,7 +250,7 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（質問のインドネシア語併記＆コメントごとの対出力ルール強化）
+            // システムプロンプト（ダッシュ線区切りの強制ルールを追加）
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
@@ -268,8 +268,10 @@
 7. カタカナ発音ガイドは出力しない。
 8. 各質問の見出しには、必ず「インドネシア語の質問文」と「日本語訳」の両方を併記すること。
 9. コメントが複数（2〜3つ）ある場合は、必ず1つのコメントごとに【インドネシア語 ➔ 日本語訳】の順番で交互に出力すること。
+10. **【重要・区切り線】異なる質問の間、および異なるコメントの間には、必ず見やすいようにダッシュ線（例: --------------------------------------------------）を挿入して、どこで区切られているかをテキスト上で明確にすること。**
 
-【出力フォーマット】
+【出力フォーマット例】
+--------------------------------------------------
 ■ 【質問〇 / Pertanyaan 〇】
 [ここに質問のインドネシア語文]
 （[ここに質問の日本語訳]）
@@ -281,6 +283,7 @@
 ■ 日本語訳
 [1つ目の日本語訳]
 
+--------------------------------------------------
 ▼ コメント 2 / Komentar 2
 ■ インドネシア語
 [2つ目のインドネシア語コメント]
@@ -288,11 +291,9 @@
 ■ 日本語訳
 [2つ目の日本語訳]
 
-（※コメント3がある場合も同様の対形式で出力）
+11. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-10. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
-
-            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください：\n\n${inputText}`;
+            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください。必ずダッシュ線で区切って出力してください：\n\n${inputText}`;
 
             // Gemini API呼び出し
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
@@ -324,10 +325,10 @@
                         .replace(/</g, "&lt;")
                         .replace(/>/g, "&gt;");
 
-                    // 質問の見出し（■ 【...】）の上に横線（<hr>）を自動で挿入し、青色で強調
+                    // 質問の見出し（■ 【...】）を青色で強調
                     htmlOutput = htmlOutput.replace(
                         /(■\s*【[^】]+】)/g,
-                        '<hr style="border: none; border-top: 1px solid #555; margin: 25px 0 15px 0;"><div style="font-weight: bold; color: #61afef; font-size: 16px; margin-bottom: 8px;">$1</div>'
+                        '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-bottom: 8px;">$1</div>'
                     );
 
                     // コメントの見出し（▼ コメント 1 ...）の装飾
@@ -338,13 +339,13 @@
 
                     // インドネシア語（発表用）の見出しを緑色に装飾
                     htmlOutput = htmlOutput.replace(
-                        /(■\s*インドネシア語（発表用）)/g,
+                        /(■\s*インドネシア語)/g,
                         '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                     );
 
                     // 日本語訳（内容確認用）の見出しを黄土色に装飾
                     htmlOutput = htmlOutput.replace(
-                        /(■\s*日本語訳（内容確認用）)/g,
+                        /(■\s*日本語訳)/g,
                         '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                     );
 
