@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>コメント</title>
+    <title>📖 週報コメント作成ツール</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -79,6 +79,13 @@
             background-color: #adb5bd;
             cursor: not-allowed;
         }
+        .clear-btn {
+            background-color: #6c757d;
+            margin-top: 10px;
+        }
+        .clear-btn:hover {
+            background-color: #5a6268;
+        }
         .result-box {
             background-color: #272822;
             color: #f8f8f2;
@@ -108,11 +115,11 @@
     <h1>📖 週報コメント作成ツール</h1>
     <div class="subtitle">ページ全体を全選択コピペ（Ctrl+A）して貼り付けるだけで、コメントと日本語訳を作成します。</div>
 
-    <!-- APIキー入力（初回のみ、一度入れればブラウザが記憶します） -->
+    <!-- APIキー入力（初回のみブラウザが記憶） -->
     <div class="card">
         <label for="apiKey">🔑 Gemini API キー：</label>
         <input type="password" id="apiKey" placeholder="AIzaSy..." oninput="saveApiKey()">
-        <div class="key-note">※初回のみ入力が必要です。入力したキーはブラウザに安全に記憶されるため、次回以降は入力不要です。</div>
+        <div class="key-note">※初回のみ入力が必要です。入力したキーはブラウザに安全に記憶されます。</div>
     </div>
 
     <div class="card">
@@ -120,6 +127,7 @@
         <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
         <br><br>
         <button id="submitBtn" onclick="generateComment()">🚀 コメントを作成する</button>
+        <button class="clear-btn" onclick="clearText()">🗑️ テキストを消去</button>
         <div id="status"></div>
     </div>
 
@@ -129,7 +137,7 @@
     </div>
 
     <script>
-        // ページを開いたときに、ブラウザに保存されているキーがあれば自動で欄にセットする
+        // ページ読み込み時に保存されたAPIキーを復元
         window.onload = function() {
             const savedKey = localStorage.getItem("gemini_api_key");
             if (savedKey) {
@@ -137,10 +145,18 @@
             }
         };
 
-        // キーが入力されるたびに、ブラウザの記憶領域（localStorage）に保存する
+        // APIキーの保存
         function saveApiKey() {
             const key = document.getElementById("apiKey").value.trim();
             localStorage.setItem("gemini_api_key", key);
+        }
+
+        // テキストエリアと結果をすべてクリアする関数
+        function clearText() {
+            document.getElementById("inputText").value = "";
+            document.getElementById("status").innerHTML = "";
+            document.getElementById("resultCard").style.display = "none";
+            document.getElementById("inputText").focus();
         }
 
         async function generateComment() {
@@ -161,11 +177,11 @@
             }
 
             // 状態更新
-            statusDiv.innerHTML = '<div class="loading">⏳ すべての質問・ポイントからコメントを作成中... 少々お待ちください。</div>';
+            statusDiv.innerHTML = '<div class="loading">⏳ すべての質問・ポイントから複数の観点でコメントを作成中... 少々お待ちください。</div>';
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（ルール固定）
+            // システムプロンプト（アップデート版ルール）
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
@@ -176,11 +192,11 @@
 【出力ルール】
 1. 各コメントは自然で上品、比較的簡単かつ丁寧なインドネシア語表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。各質問に対するコメントは異なった観点から2-3つ書き出すこと。
 2. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
-2. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（例：Paulus, Filemon, Onesimus, Yehuwa, Sidang）。教会用語は使用しない。
-3. 人を指す場合は orang、それ以外の事柄・方法・点は ini / hal ini / dengan cara ini を適切に使い分ける。
-4. 略語（yg など）は使わず、正式な表記（yang など）にする。
-5. カタカナ発音ガイドは出力しない。
-6. 出力は、見つかった質問・ポイントごとに以下の形式を繰り返して提示する：
+3. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（例：Paulus, Filemon, Onesimus, Yehuwa, Sidang）。教会用語は使用しない。
+4. 人を指す場合は orang、それ以外の事柄・方法・点は ini / hal ini / dengan cara ini を適切に使い分ける。
+5. 略語（yg など）は使わず、正式な表記（yang など）にする。
+6. カタカナ発音ガイドは出力しない。
+7. 出力は、見つかった質問・ポイントごとに以下の形式を繰り返して提示する：
    ■ 【質問・テーマ〇についてのコメント】
    ■ インドネシア語（発表用）
    [ここにインドネシア語本文]
@@ -188,9 +204,9 @@
    ■ 日本語訳（内容確認用）
    [ここに日本語訳]
 
-7. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
+8. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
+            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください：\n\n${inputText}`;
 
             // Gemini API呼び出し
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
