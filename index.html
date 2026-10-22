@@ -211,7 +211,7 @@
         // 結果をすべてコピーする関数
         function copyResult() {
             const resultTextEl = document.getElementById("resultText");
-            const textToCopy = resultTextEl.innerText; // テキストとして取得（ダッシュ線もそのままコピーされます）
+            const textToCopy = resultTextEl.innerText;
 
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const copyBtn = document.getElementById("copyBtn");
@@ -250,7 +250,7 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（ダッシュ線区切りの強制ルールを追加）
+            // システムプロンプト
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
@@ -295,8 +295,9 @@
 
             const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください。必ずダッシュ線で区切って出力してください：\n\n${inputText}`;
 
-            // Gemini API呼び出し
-           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // Gemini API呼び出し (v1 / gemini-1.5-flash)
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
             const requestBody = {
                 systemInstruction: {
                     parts: [{ text: systemInstruction }]
@@ -336,13 +337,13 @@
                         '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
                     );
 
-                    // インドネシア語（発表用）の見出しを緑色に装飾
+                    // インドネシア語の見出しを緑色に装飾
                     htmlOutput = htmlOutput.replace(
                         /(■\s*インドネシア語)/g,
                         '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                     );
 
-                    // 日本語訳（内容確認用）の見出しを黄土色に装飾
+                    // 日本語訳の見出しを黄土色に装飾
                     htmlOutput = htmlOutput.replace(
                         /(■\s*日本語訳)/g,
                         '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
