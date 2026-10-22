@@ -95,6 +95,30 @@
         .clear-btn-top:hover {
             background-color: #5a6268;
         }
+        .result-container {
+            position: relative;
+        }
+        .copy-btn {
+            position: sticky;
+            top: 15px;
+            float: right;
+            margin-right: 15px;
+            margin-top: 15px;
+            z-index: 10;
+            background-color: #4f545c;
+            color: #ffffff;
+            border: none;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #606770;
+        }
         .result-box {
             background-color: #272822;
             color: #f8f8f2;
@@ -105,6 +129,8 @@
             line-height: 1.6;
             margin-top: 10px;
             overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
             white-space: pre-wrap;
         }
         .error {
@@ -142,7 +168,10 @@
 
     <div class="card" id="resultCard" style="display: none;">
         <label>✨ 完成したコメント：</label>
-        <div class="result-box" id="resultText"></div>
+        <div class="result-container">
+            <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
+            <div class="result-box" id="resultText"></div>
+        </div>
     </div>
 
     <script>
@@ -166,6 +195,24 @@
             document.getElementById("status").innerHTML = "";
             document.getElementById("resultCard").style.display = "none";
             document.getElementById("inputText").focus();
+        }
+
+        // 結果をすべてコピーする関数
+        function copyResult() {
+            const resultTextEl = document.getElementById("resultText");
+            const textToCopy = resultTextEl.innerText; // HTMLタグを除いたテキストを取得
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyBtn = document.getElementById("copyBtn");
+                copyBtn.textContent = "✅ コピーしました！";
+                copyBtn.style.backgroundColor = "#20c997";
+                setTimeout(() => {
+                    copyBtn.textContent = "📋 すべてコピー";
+                    copyBtn.style.backgroundColor = "#4f545c";
+                }, 2000);
+            }).catch(err => {
+                alert("コピーに失敗しました: " + err);
+            });
         }
 
         async function generateComment() {
