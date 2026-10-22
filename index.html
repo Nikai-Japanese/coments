@@ -117,41 +117,56 @@
             border-radius: 6px;
             border: 1px solid #ced4da;
         }
+        
+        /* PDF表示領域（縦幅をコンパクトに修正） */
         .pdf-badge {
-            background-color: #f1f3f5;
+            background-color: #e9ecef;
             border: 1px solid #ced4da;
             border-radius: 6px;
-            height: 80px;
+            padding: 8px 12px;
+            min-height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             color: #495057;
-            font-size: 14px;
-            padding: 0 10px;
+            font-size: 13px;
             text-align: center;
+            word-break: break-all;
         }
-        /* 削除ボタンのテキスト中央寄せ・大きさ調整 */
+
+        /* 削除ボタンの共通スタイル */
         .remove-btn {
             background-color: #e03131;
             color: white;
-            padding: 12px 10px;
-            font-size: 14px;
+            padding: 8px 12px;
+            font-size: 13px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
             text-align: center;
-            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             border: none;
             flex: 1;
+            transition: background-color 0.2s;
         }
         .remove-btn:hover {
             background-color: #c92a2a;
         }
-        
+
+        /* 画像削除時のみ高さ80pxに合わせる */
+        #imagePreviewContainer .remove-btn {
+            height: 80px;
+        }
+
+        /* PDF削除時はコンパクトな高さ（約40px）に合わせる */
+        #pdfPreviewContainer .remove-btn {
+            height: auto;
+            min-height: 42px;
+        }
+
         /* 結果ボックス＆右上固定コピーボタン */
         .result-container {
             position: relative;
@@ -231,7 +246,7 @@
             <button type="button" class="remove-btn" onclick="removeImage()">❌ 画像削除</button>
         </div>
 
-        <!-- 選択PDFプレビュー領域 -->
+        <!-- 選択PDFプレビュー領域（コンパクト化） -->
         <div id="pdfPreviewContainer" class="preview-container" style="display: none;">
             <div id="pdfBadge" class="pdf-badge">📄 PDF読み込み済み</div>
             <button type="button" class="remove-btn" onclick="removePdf()">❌ PDF削除</button>
