@@ -51,19 +51,25 @@
             gap: 10px;
             margin-top: 10px;
         }
-        button {
+        button, .image-input-btn {
             border: none;
-            padding: 12px 20px;
-            font-size: 15px;
+            padding: 12px 10px;
+            font-size: 14px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
+            text-align: center;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
         .btn-primary {
             background-color: #20c997;
             color: white;
-            flex: 2; /* 約2/3の幅 */
+            flex: 1.5; /* 一番左: GO! */
         }
         .btn-primary:hover {
             background-color: #0ca678;
@@ -72,40 +78,30 @@
             background-color: #adb5bd;
             cursor: not-allowed;
         }
+        .image-input-btn {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+            flex: 1.5; /* 真ん中: 画像選択 */
+        }
+        .image-input-btn:hover {
+            background-color: #dee2e6;
+        }
         .clear-btn {
             background-color: #6c757d;
             color: white;
-            flex: 1; /* 約1/3の幅 */
-            font-size: 14px;
+            flex: 1; /* 一番右: 消去 */
         }
         .clear-btn:hover {
             background-color: #5a6268;
         }
 
-        /* 画像アップロード領域のスタイル */
-        .image-upload-wrapper {
-            margin-bottom: 12px;
-        }
-        .image-input-label {
-            display: inline-block;
-            background-color: #e9ecef;
-            color: #495057;
-            padding: 8px 14px;
-            border-radius: 6px;
-            border: 1px solid #ced4da;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        .image-input-label:hover {
-            background-color: #dee2e6;
-        }
+        /* 画像プレビュー領域のスタイル */
         .image-preview-container {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 8px;
+            margin-bottom: 10px;
         }
         .image-preview-container > * {
             flex: 1;
@@ -121,7 +117,7 @@
             background-color: #e03131;
             color: white;
             padding: 12px 20px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
@@ -198,7 +194,7 @@
     <!-- APIキー入力 -->
     <div class="card" style="padding: 12px 20px;">
         <button type="button" onclick="toggleApiKey()" style="background: transparent; color: #495057; border: 1px dashed #ced4da; padding: 8px 12px; width: 100%; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Gemini APIキー</span>
+            <span>🔑 Gemini APIキー設定</span>
             <span id="apiToggleArrow">▼</span>
         </button>
         <div id="apiKeyContent" style="display: none; margin-top: 12px;">
@@ -209,21 +205,21 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
-        <!-- 画像アップロード選択欄 -->
-        <div class="image-upload-wrapper">
-            <label class="image-input-label" for="imageInput">
-                画像
-            </label>
-            <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
-            <div id="imagePreviewContainer" class="image-preview-container" style="display: none;">
-                <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
-                <button type="button" class="remove-img-btn" onclick="removeImage()">❌ 削除</button>
-            </div>
+        <!-- 選択画像プレビュー領域（画像選択時のみ表示） -->
+        <div id="imagePreviewContainer" class="image-preview-container" style="display: none;">
+            <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
+            <button type="button" class="remove-img-btn" onclick="removeImage()">❌ 画像削除</button>
         </div>
 
         <textarea id="inputText" placeholder=""></textarea>
+        
+        <!-- ボタン群（左：GO、中央：画像、右：消去） -->
         <div class="btn-group">
             <button id="submitBtn" class="btn-primary" onclick="generateComment()">GO!</button>
+            <label class="image-input-btn" for="imageInput">
+                📷 画像を選択
+            </label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
             <button class="clear-btn" onclick="clearText()">消去</button>
         </div>
         <div id="status"></div>
@@ -354,8 +350,8 @@
 【入力テキスト・画像の取り扱い】
 ・入力テキストや画像にWebサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要な情報（ノイズ）が含まれている場合は完全に無視し、記事の本文・聖句・学習テーマ・挿絵や図表に関する核心部分に注目してください。
 ・最初のパート「HARTA DALAM FIRMAN ALLAH」の最初の10分の話については答える必要はありません。完全に無視してください。コメントの作成対象は「2. Permata Rohani」以下のセクションのみです。
+・「2. Permata Rohani」の質問「Dari pembacaan Alkitab minggu ini, permata rohani apa yang mau Saudara bagikan?」については、その週の聖書通読範囲内の各章ごとに（例：[Pasal 45]、[Pasal 46]など）見出しを立て、何章何節から引用したかを明記した上で、霊的な宝石（コメントと日本語訳）を作成してください。
 ・「2. Permata Rohani」以下のテキスト内に**複数の質問や異なる段落・テーマ**が含まれている場合は、**すべての質問やポイントを漏らさず見つけ出し、それぞれの質問・ポイントごとに**インドネシア語コメントと日本語訳を作成してください。
-・「2. Permata Rohani」の「Dari pembacaan Alkitab minggu ini, permata rohani apa yang mau Saudara bagikan?」の答えは、その週の聖書通読範囲内の各章から3つずつ答えを準備してください。興味深い内容ならそれ以上でも構いません。何章何節から引用したかなどもきちんと含めてください。
 ・画像が添付されている場合、画像内の挿絵、イラスト、図表、キャプションを読み取り、そこから学べる視覚的な教訓（Pelajaran/Hal yang bisa dipelajari dari gambar）についてもコメントの選択肢として含めてください。
 
 【出力ルール】
