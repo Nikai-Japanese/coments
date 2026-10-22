@@ -6,6 +6,10 @@
     <title>マル秘ツール</title>
     <!-- タブの一番左に㊙️アイコンを表示 -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>㊙️</text></svg>">
+    
+    <!-- PDF.js ライブラリ (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -48,13 +52,13 @@
         }
         .btn-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 10px;
         }
-        button, .image-input-btn {
+        button, .image-input-btn, .pdf-input-btn {
             border: none;
-            padding: 12px 10px;
-            font-size: 14px;
+            padding: 12px 8px;
+            font-size: 13px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
@@ -82,9 +86,18 @@
             background-color: #e9ecef;
             color: #495057;
             border: 1px solid #ced4da;
-            flex: 1.5; /* 真ん中: 画像選択 */
+            flex: 1.2; /* 画像選択 */
         }
         .image-input-btn:hover {
+            background-color: #dee2e6;
+        }
+        .pdf-input-btn {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+            flex: 1.2; /* PDF選択 */
+        }
+        .pdf-input-btn:hover {
             background-color: #dee2e6;
         }
         .clear-btn {
@@ -130,7 +143,44 @@
         .remove-img-btn:hover {
             background-color: #c92a2a;
         }
-        
+
+        /* PDFプレビュー領域のスタイル */
+        .pdf-preview-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #e7f5ff;
+            border: 1px solid #a5d8ff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #1864ab;
+        }
+        .pdf-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .remove-pdf-btn {
+            background-color: #e03131;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            white-space: nowrap;
+        }
+        .remove-pdf-btn:hover {
+            background-color: #c92a2a;
+        }
+
         /* 結果ボックス＆右上固定コピーボタン */
         .result-container {
             position: relative;
@@ -211,15 +261,32 @@
             <button type="button" class="remove-img-btn" onclick="removeImage()">❌ 画像削除</button>
         </div>
 
+        <!-- 選択PDF表示領域（PDF選択時のみ表示） -->
+        <div id="pdfPreviewContainer" class="pdf-preview-container" style="display: none;">
+            <div class="pdf-info">
+                <span>📄</span>
+                <span id="pdfNameText">ファイル名.pdf</span>
+                <span id="pdfPageText" style="font-weight: normal; opacity: 0.8;">(全 0 ページ)</span>
+            </div>
+            <button type="button" class="remove-pdf-btn" onclick="removePdf()">❌ PDF削除</button>
+        </div>
+
         <textarea id="inputText" placeholder=""></textarea>
         
-        <!-- ボタン群（左：GO、中央：画像、右：消去） -->
+        <!-- ボタン群（左：GO、2番目：画像、3番目：PDF、右：消去） -->
         <div class="btn-group">
             <button id="submitBtn" class="btn-primary" onclick="generateComment()">GO!</button>
+            
             <label class="image-input-btn" for="imageInput">
                 📷 画像を選択
             </label>
             <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+            
+            <label class="pdf-input-btn" for="pdfInput">
+                📄 PDFを選択
+            </label>
+            <input type="file" id="pdfInput" accept="application/pdf" style="display: none;" onchange="handlePdfSelect(event)">
+            
             <button class="clear-btn" onclick="clearText()">消去</button>
         </div>
         <div id="status"></div>
@@ -227,7 +294,7 @@
 
     <!-- 結果表示カード -->
     <div class="card" id="resultCard" style="display: none;">
-            <div class="result-container">
+        <div class="result-container">
             <div class="copy-btn-header">
                 <button id="copyBtn" class="copy-btn" onclick="copyResult()">COPY</button>
             </div>
@@ -236,8 +303,12 @@
     </div>
 
     <script>
+        // PDF.js ワーカーの指定
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
         let selectedBase64Image = null;
         let selectedMimeType = null;
+        let extractedPdfText = "";
 
         // ページ読み込み時に保存されたAPIキーを復元
         window.onload = function() {
@@ -292,12 +363,54 @@
             document.getElementById("imagePreviewContainer").style.display = "none";
         }
 
+        // PDF選択処理
+        async function handlePdfSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusDiv = document.getElementById("status");
+            statusDiv.innerHTML = '<div class="loading">📄 PDFを読み込み中...</div>';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                let pdfFullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const tokenized = await page.getTextContent();
+                    const pageText = tokenized.items.map(item => item.str).join(" ");
+                    pdfFullText += `\n--- [PDF Page ${i}] ---\n` + pageText;
+                }
+
+                extractedPdfText = pdfFullText.trim();
+
+                document.getElementById("pdfNameText").textContent = file.name;
+                document.getElementById("pdfPageText").textContent = `(全 ${pdf.numPages} ページ)`;
+                document.getElementById("pdfPreviewContainer").style.display = "flex";
+                statusDiv.innerHTML = "";
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="error">❌ PDFの解析に失敗しました: ${err.message}</div>`;
+                removePdf();
+            }
+        }
+
+        // PDF削除処理
+        function removePdf() {
+            extractedPdfText = "";
+            document.getElementById("pdfInput").value = "";
+            document.getElementById("pdfNameText").textContent = "";
+            document.getElementById("pdfPageText").textContent = "";
+            document.getElementById("pdfPreviewContainer").style.display = "none";
+        }
+
         // テキストエリアと結果をすべてクリアする関数
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
             document.getElementById("resultCard").style.display = "none";
             removeImage();
+            removePdf();
             document.getElementById("inputText").focus();
         }
 
@@ -329,12 +442,22 @@
             const resultText = document.getElementById("resultText");
             const submitBtn = document.getElementById("submitBtn");
 
+            // 入力テキスト、PDF抽出テキストを統合
+            let combinedContent = "";
+            if (inputText) {
+                combinedContent += inputText;
+            }
+            if (extractedPdfText) {
+                if (combinedContent) combinedContent += "\n\n";
+                combinedContent += "【PDFから抽出した本文】:\n" + extractedPdfText;
+            }
+
             if (!apiKey) {
                 statusDiv.innerHTML = '<div class="error">⚠️ APIキーを入力してください。</div>';
                 return;
             }
-            if (!inputText && !selectedBase64Image) {
-                statusDiv.innerHTML = '<div class="error">⚠️ テキストまたは画像を入力してください。</div>';
+            if (!combinedContent && !selectedBase64Image) {
+                statusDiv.innerHTML = '<div class="error">⚠️ テキスト、PDF、または画像を入力してください。</div>';
                 return;
             }
 
@@ -389,7 +512,7 @@
 
 11. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            const promptText = `以下のテキストおよび画像に含まれる「2. Permata Rohani」以降のすべての質問や学習ポイントをもとに、それぞれの該当する質問や段落の場所で、挿絵の教訓も含めた集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください。必ずダッシュ線で区切って出力してください：\n\n${inputText}`;
+            const promptText = `以下のテキストおよび画像に含まれる「2. Permata Rohani」以降のすべての質問や学習ポイントをもとに、それぞれの該当する質問や段落の場所で、挿絵の教訓も含めた集会用インドネシア語コメントとその日本語訳を複数の観点から作成してください。必ずダッシュ線で区切って出力してください：\n\n${combinedContent}`;
 
             // リクエストパーツの構築（テキスト ＋ 画像）
             const parts = [{ text: promptText }];
