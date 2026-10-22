@@ -92,7 +92,7 @@
 <body>
 
     <h1>📖 週報コメント作成ツール</h1>
-    <div class="subtitle">ページ全体を全選択コピペ（Ctrl+A）して貼り付けるだけで、コメントと日本語訳を作成します。</div>
+    <div class="subtitle">ページ全体を全選択コピペ（Ctrl+A）して貼り付けるだけで、すべての質問やポイントに対するコメントと日本語訳を作成します。</div>
 
     <div class="card">
         <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
@@ -103,12 +103,12 @@
     </div>
 
     <div class="card" id="resultCard" style="display: none;">
-        <label>✨ 完成したコメント：</label>
+        <label>✨ 完成したコメント（すべての質問分）：</label>
         <div class="result-box" id="resultText"></div>
     </div>
 
     <script>
-        // ★ここにあなたの Gemini API キーをそのまま入れます★
+        // ★APIキー設定★
         const API_KEY = "AIzaSyD44U96p5LDERiSEF8bEmCVmaIU8kuPDLk";
 
         async function generateComment() {
@@ -118,7 +118,6 @@
             const resultText = document.getElementById("resultText");
             const submitBtn = document.getElementById("submitBtn");
 
-            // キーが未入力のときだけエラーにする
             if (!API_KEY || API_KEY.includes("ここに")) {
                 statusDiv.innerHTML = '<div class="error">⚠️ APIキーを正しく設定してください。</div>';
                 return;
@@ -129,32 +128,36 @@
             }
 
             // 状態更新
-            statusDiv.innerHTML = '<div class="loading">⏳ コメントを作成中... 少々お待ちください。</div>';
+            statusDiv.innerHTML = '<div class="loading">⏳ すべての質問・ポイントからコメントを作成中... 少々お待ちください。</div>';
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（ルール固定）
+            // システムプロンプト（複数質問への完全対応ルール）
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
 【入力テキストの取り扱い】
-・入力テキストにWebサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要な情報（ノイズ）が含まれている場合は完全に無視し、記事の本文・聖句・学習テーマに関する核心部分だけに注目して処理してください。
+・入力テキストにWebサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要な情報（ノイズ）が含まれている場合は完全に無視し、記事の本文・聖句・学習テーマに関する核心部分に注目してください。
+・入力テキスト内に**複数の質問や異なる段落・テーマ**が含まれている場合は、**すべての質問やポイントを漏らさず見つけ出し、それぞれの質問・ポイントごとに**インドネシア語コメントと日本語訳を作成してください。
 
 【出力ルール】
-1. 自然で上品、かつ丁寧なインドネシア語表現（会衆の集会で朗読・発表するのに適したスタイル）にする。
+1. 各コメントは自然で上品、かつ丁寧なインドネシア語表現（会衆の集会で朗読・発表するのに適したスタイル）にする。
 2. 固有名詞は聖書新世界訳の表記に合わせる（例：Paulus, Filemon, Onesimus, Yehuwa, Sidang）。
 3. 人を指す場合は orang、それ以外の事柄・方法・点は ini / hal ini / dengan cara ini を適切に使い分ける。
 4. 略語（yg など）は使わず、正式な表記（yang など）にする。
 5. カタカナ発音ガイドは出力しない。
-6. 出力は以下の2つの要素のみを、1つの見やすいテキスト形式で提示する：
+6. 出力は、見つかった質問・ポイントごとに以下の形式を繰り返して提示する：
+
+   ■ 【質問・テーマ〇についてのコメント】
    ■ インドネシア語（発表用）
    [ここにインドネシア語本文]
 
    ■ 日本語訳（内容確認用）
    [ここに日本語訳]
+
 7. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            const promptText = `以下のテキストをもとに、集会用の素晴らしいインドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
+            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
 
             // Gemini API呼び出し
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${API_KEY}`;
