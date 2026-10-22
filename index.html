@@ -1,139 +1,140 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>コメント</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            max-width: 800px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-        h1 {
-            color: #2c3e50;
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-        .card {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 8px;
-            color: #495057;
-        }
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-            height: 200px;
-            resize: vertical;
-        }
-        button {
-            background-color: #20c997;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: #0ca678;
-        }
-        button:disabled {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-        }
-        .result-box {
-            background-color: #272822;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 15px;
-            line-height: 1.6;
-            margin-top: 10px;
-            overflow-x: auto;
-        }
-        .error {
-            color: #e03131;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .loading {
-            color: #1c7ed6;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 週報コメント作成ツール</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            height: 200px;
+            resize: vertical;
+        }
+        button {
+            background-color: #20c997;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0ca678;
+        }
+        button:disabled {
+            background-color: #adb5bd;
+            cursor: not-allowed;
+        }
+        .result-box {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        .error {
+            color: #e03131;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .loading {
+            color: #1c7ed6;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>コメント</h1>
-    <div class="subtitle">ページ全体を全選択コピペ（Ctrl+A）して貼り付けるだけで、すべての質問やポイントに対するコメントと日本語訳を作成します。</div>
+    <h1>📖 週報コメント作成ツール</h1>
+    <div class="subtitle">ページ全体を全選択コピペ（Ctrl+A）して貼り付けるだけで、コメントと日本語訳を作成します。</div>
 
-    <div class="card">
-        <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
-        <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
-        <br><br>
-        <button id="submitBtn" onclick="generateComment()">🚀 コメントを作成する</button>
-        <div id="status"></div>
-    </div>
+    <div class="card">
+        <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
+        <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
+        <br><br>
+        <button id="submitBtn" onclick="generateComment()">🚀 コメントを作成する</button>
+        <div id="status"></div>
+    </div>
 
-    <div class="card" id="resultCard" style="display: none;">
-        <label>✨ 完成したコメント（すべての質問分）：</label>
-        <div class="result-box" id="resultText"></div>
-    </div>
+    <div class="card" id="resultCard" style="display: none;">
+        <label>✨ 完成したコメント：</label>
+        <div class="result-box" id="resultText"></div>
+    </div>
 
-    <script>
-        // ★APIキー設定★
-        const API_KEY = "AIzaSyD44U96p5LDERiSEF8bEmCVmaIU8kuPDLk";
+    <script>
+        // ★ここにあなたの Gemini API キーをそのまま入れます★
+        const API_KEY = "AIzaSyD44U96p5LDERiSEF8bEmCVmaIU8kuPDLk";
 
-        async function generateComment() {
-            const inputText = document.getElementById("inputText").value.trim();
-            const statusDiv = document.getElementById("status");
-            const resultCard = document.getElementById("resultCard");
-            const resultText = document.getElementById("resultText");
-            const submitBtn = document.getElementById("submitBtn");
+        async function generateComment() {
+            const inputText = document.getElementById("inputText").value.trim();
+            const statusDiv = document.getElementById("status");
+            const resultCard = document.getElementById("resultCard");
+            const resultText = document.getElementById("resultText");
+            const submitBtn = document.getElementById("submitBtn");
 
-            if (!API_KEY || API_KEY.includes("ここに")) {
-                statusDiv.innerHTML = '<div class="error">⚠️ APIキーを正しく設定してください。</div>';
-                return;
-            }
-            if (!inputText) {
-                statusDiv.innerHTML = '<div class="error">⚠️ テキストを入力してください。</div>';
-                return;
-            }
+            // キーが未入力のときだけエラーにする
+            if (!API_KEY || API_KEY.includes("ここに")) {
+                statusDiv.innerHTML = '<div class="error">⚠️ APIキーを正しく設定してください。</div>';
+                return;
+            }
+            if (!inputText) {
+                statusDiv.innerHTML = '<div class="error">⚠️ テキストを入力してください。</div>';
+                return;
+            }
 
-            // 状態更新
-            statusDiv.innerHTML = '<div class="loading">⏳ すべての質問・ポイントからコメントを作成中... 少々お待ちください。</div>';
-            submitBtn.disabled = true;
-            resultCard.style.display = "none";
+            // 状態更新
+            statusDiv.innerHTML = '<div class="loading">⏳ コメントを作成中... 少々お待ちください。</div>';
+            submitBtn.disabled = true;
+            resultCard.style.display = "none";
 
-            // システムプロンプト（複数質問への完全対応ルール）
-            const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
+            // システムプロンプト（ルール固定）
+            const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って回答を作成してください：
 
 【入力テキストの取り扱い】
@@ -147,53 +148,47 @@
 4. 略語（yg など）は使わず、正式な表記（yang など）にする。
 5. カタカナ発音ガイドは出力しない。
 6. 出力は、見つかった質問・ポイントごとに以下の形式を繰り返して提示する：
-
-   ■ 【質問・テーマ〇についてのコメント】
-   ■ インドネシア語（発表用）
-   [ここにインドネシア語本文]
-
-   ■ 日本語訳（内容確認用）
-   [ここに日本語訳]
-
+   ■ 日本語訳（内容確認用）
+   [ここに日本語訳]
 7. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
+            const promptText = `以下のテキストをもとに、集会用の素晴らしいインドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
 
-            // Gemini API呼び出し
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${API_KEY}`;
+            // Gemini API呼び出し
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${API_KEY}`;
 
-            const requestBody = {
-                systemInstruction: {
-                    parts: [{ text: systemInstruction }]
-                },
-                contents: [{
-                    parts: [{ text: promptText }]
-                }]
-            };
+            const requestBody = {
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                },
+                contents: [{
+                    parts: [{ text: promptText }]
+                }]
+            };
 
-            try {
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(requestBody)
-                });
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestBody)
+                });
 
-                const data = await response.json();
+                const data = await response.json();
 
-                if (response.ok) {
-                    const output = data.candidates[0].content.parts[0].text;
-                    resultText.textContent = output;
-                    resultCard.style.display = "block";
-                    statusDiv.innerHTML = "";
-                } else {
-                    statusDiv.innerHTML = `<div class="error">❌ エラーが発生しました: ${data.error.message}</div>`;
-                }
-            } catch (err) {
-                statusDiv.innerHTML = `<div class="error">❌ 通信エラーが発生しました: ${err.message}</div>`;
-            } finally {
-                submitBtn.disabled = false;
-            }
-        }
-    </script>
+                if (response.ok) {
+                    const output = data.candidates[0].content.parts[0].text;
+                    resultText.textContent = output;
+                    resultCard.style.display = "block";
+                    statusDiv.innerHTML = "";
+                } else {
+                    statusDiv.innerHTML = `<div class="error">❌ エラーが発生しました: ${data.error.message}</div>`;
+                }
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="error">❌ 通信エラーが発生しました: ${err.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
