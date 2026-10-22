@@ -107,17 +107,32 @@
             gap: 10px;
             margin-top: 8px;
         }
+        .image-preview-container > * {
+            flex: 1;
+        }
         .image-preview {
+            width: 100%;
             max-height: 80px;
-            border-radius: 4px;
+            object-fit: cover;
+            border-radius: 6px;
             border: 1px solid #ced4da;
         }
         .remove-img-btn {
             background-color: #e03131;
             color: white;
-            padding: 4px 10px;
-            font-size: 12px;
-            border-radius: 4px;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .remove-img-btn:hover {
+            background-color: #c92a2a;
         }
         
         /* 結果ボックス＆右上固定コピーボタン */
