@@ -36,6 +36,20 @@
             margin-bottom: 8px;
             color: #495057;
         }
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .key-note {
+            font-size: 12px;
+            color: #868e96;
+            margin-bottom: 15px;
+        }
         textarea {
             width: 100%;
             padding: 10px;
@@ -94,6 +108,13 @@
     <h1>📖 週報コメント作成ツール</h1>
     <div class="subtitle">ページ全体を全選択コピペ（Ctrl+A）して貼り付けるだけで、コメントと日本語訳を作成します。</div>
 
+    <!-- APIキー入力（初回のみ、一度入れればブラウザが記憶します） -->
+    <div class="card">
+        <label for="apiKey">🔑 Gemini API キー：</label>
+        <input type="password" id="apiKey" placeholder="AIzaSy..." oninput="saveApiKey()">
+        <div class="key-note">※初回のみ入力が必要です。入力したキーはブラウザに安全に記憶されるため、次回以降は入力不要です。</div>
+    </div>
+
     <div class="card">
         <label for="inputText">📝 記事テキスト（Ctrl+A で丸ごと貼り付けOK）：</label>
         <textarea id="inputText" placeholder="Webサイトのテキストをそのまま貼り付けてください。ヘッダーやフッターなどの不要な部分は自動的に無視されます。"></textarea>
@@ -108,19 +129,30 @@
     </div>
 
     <script>
-        // ★ここにあなたの Gemini API キーをそのまま入れます★
-        const API_KEY = "AIzaSyD44U96p5LDERiSEF8bEmCVmaIU8kuPDLk";
+        // ページを開いたときに、ブラウザに保存されているキーがあれば自動で欄にセットする
+        window.onload = function() {
+            const savedKey = localStorage.getItem("gemini_api_key");
+            if (savedKey) {
+                document.getElementById("apiKey").value = savedKey;
+            }
+        };
+
+        // キーが入力されるたびに、ブラウザの記憶領域（localStorage）に保存する
+        function saveApiKey() {
+            const key = document.getElementById("apiKey").value.trim();
+            localStorage.setItem("gemini_api_key", key);
+        }
 
         async function generateComment() {
+            const apiKey = document.getElementById("apiKey").value.trim();
             const inputText = document.getElementById("inputText").value.trim();
             const statusDiv = document.getElementById("status");
             const resultCard = document.getElementById("resultCard");
             const resultText = document.getElementById("resultText");
             const submitBtn = document.getElementById("submitBtn");
 
-            // キーが未入力のときだけエラーにする
-            if (!API_KEY || API_KEY.includes("ここに")) {
-                statusDiv.innerHTML = '<div class="error">⚠️ APIキーを正しく設定してください。</div>';
+            if (!apiKey) {
+                statusDiv.innerHTML = '<div class="error">⚠️ APIキーを入力してください。</div>';
                 return;
             }
             if (!inputText) {
@@ -129,7 +161,7 @@
             }
 
             // 状態更新
-            statusDiv.innerHTML = '<div class="loading">⏳ コメントを作成中... 少々お待ちください。</div>';
+            statusDiv.innerHTML = '<div class="loading">⏳ すべての質問・ポイントからコメントを作成中... 少々お待ちください。</div>';
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
@@ -148,14 +180,19 @@
 4. 略語（yg など）は使わず、正式な表記（yang など）にする。
 5. カタカナ発音ガイドは出力しない。
 6. 出力は、見つかった質問・ポイントごとに以下の形式を繰り返して提示する：
+   ■ 【質問・テーマ〇についてのコメント】
+   ■ インドネシア語（発表用）
+   [ここにインドネシア語本文]
+
    ■ 日本語訳（内容確認用）
    [ここに日本語訳]
+
 7. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            const promptText = `以下のテキストをもとに、集会用の素晴らしいインドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
+            const promptText = `以下のテキストに含まれるすべての質問や学習ポイントをもとに、それぞれの集会用インドネシア語コメントとその日本語訳を作成してください：\n\n${inputText}`;
 
             // Gemini API呼び出し
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
             const requestBody = {
                 systemInstruction: {
