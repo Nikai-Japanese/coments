@@ -51,12 +51,14 @@
             height: 100px;
             resize: vertical;
         }
+        
+        /* 下段のボタン群：4つの等分グリッド（上下の幅を完全に同期） */
         .btn-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             margin-top: 10px;
         }
-        /* 4つのボタンのサイズを完全に均等に統一 */
         .btn-group button, .btn-group .image-input-btn, .btn-group .pdf-input-btn {
             border: none;
             padding: 12px 4px;
@@ -71,7 +73,7 @@
             align-items: center;
             justify-content: center;
             white-space: nowrap;
-            flex: 1;
+            width: 100%;
         }
         .btn-primary {
             background-color: #20c997;
@@ -100,18 +102,15 @@
             background-color: #5a6268;
         }
 
-        /* プレビュー領域のスタイル（下のボタン群とgapを8pxに統一） */
+        /* プレビュー領域：下段と同じ4列グリッドにして境界線を完璧に一致させる */
         .preview-container {
-            display: flex;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             margin-bottom: 10px;
         }
-        .preview-container > * {
-            flex: 1;
-        }
         
-        /* 画像プレビュー（高さ・ボックスモデルを削除ボタンと完全に一致） */
+        /* 画像プレビュー：左側の2カラム分（GO!と画像の幅）を使用 */
         .image-preview {
             width: 100%;
             height: 42px;
@@ -119,9 +118,10 @@
             border-radius: 6px;
             border: 1px solid #ced4da;
             box-sizing: border-box;
+            grid-column: span 2;
         }
         
-        /* PDF表示領域（高さ・パディングを削除ボタンと完全に一致） */
+        /* PDF表示領域：左側の2カラム分を使用 */
         .pdf-badge {
             background-color: #e9ecef;
             border: 1px solid #ced4da;
@@ -137,9 +137,10 @@
             text-align: center;
             word-break: break-all;
             box-sizing: border-box;
+            grid-column: span 2;
         }
 
-        /* 削除ボタンの共通スタイル（高さ・パディングを完全に統一） */
+        /* 削除ボタン：右側の2カラム分（PDFと消去の幅）を使用し、右端を消去ボタンとドンピシャで合わせる */
         .remove-btn {
             background-color: #e03131;
             color: white;
@@ -153,9 +154,9 @@
             align-items: center;
             justify-content: center;
             border: none;
-            flex: 1;
             height: 42px;
             box-sizing: border-box;
+            grid-column: span 2;
             transition: background-color 0.2s;
         }
         .remove-btn:hover {
@@ -235,13 +236,13 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
-        <!-- 選択画像プレビュー領域（コンパクト化） -->
+        <!-- 選択画像プレビュー領域 -->
         <div id="imagePreviewContainer" class="preview-container" style="display: none;">
             <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
             <button type="button" class="remove-btn" onclick="removeImage()">❌ 画像削除</button>
         </div>
 
-        <!-- 選択PDFプレビュー領域（コンパクト化） -->
+        <!-- 選択PDFプレビュー領域 -->
         <div id="pdfPreviewContainer" class="preview-container" style="display: none;">
             <div id="pdfBadge" class="pdf-badge">📄 PDF読み込み済み</div>
             <button type="button" class="remove-btn" onclick="removePdf()">❌ PDF削除</button>
@@ -318,7 +319,7 @@
                 selectedBase64Image = dataUrl.split(',')[1];
                 
                 document.getElementById("imagePreview").src = dataUrl;
-                document.getElementById("imagePreviewContainer").style.display = "flex";
+                document.getElementById("imagePreviewContainer").style.display = "grid";
             };
             reader.readAsDataURL(file);
         }
@@ -355,7 +356,7 @@
 
                 extractedPdfText = fullText;
                 document.getElementById("pdfBadge").textContent = `📄 ${file.name} (${pdfDoc.numPages}ページ)`;
-                document.getElementById("pdfPreviewContainer").style.display = "flex";
+                document.getElementById("pdfPreviewContainer").style.display = "grid";
                 statusDiv.innerHTML = "";
             } catch (err) {
                 statusDiv.innerHTML = `<div class="error">❌ PDFの解析に失敗しました: ${err.message}</div>`;
