@@ -100,33 +100,34 @@
             background-color: #5a6268;
         }
 
-        /* プレビュー領域のスタイル */
+        /* プレビュー領域のスタイル（下のボタン群とgapを8pxに統一） */
         .preview-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 10px;
         }
         .preview-container > * {
             flex: 1;
         }
         
-        /* 画像プレビュー（高さをコンパクトに修正） */
+        /* 画像プレビュー（高さ・ボックスモデルを削除ボタンと完全に一致） */
         .image-preview {
             width: 100%;
-            max-height: 42px;
+            height: 42px;
             object-fit: cover;
             border-radius: 6px;
             border: 1px solid #ced4da;
+            box-sizing: border-box;
         }
         
-        /* PDF表示領域（コンパクト） */
+        /* PDF表示領域（高さ・パディングを削除ボタンと完全に一致） */
         .pdf-badge {
             background-color: #e9ecef;
             border: 1px solid #ced4da;
             border-radius: 6px;
-            padding: 8px 12px;
-            min-height: 24px;
+            height: 42px;
+            padding: 0 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -135,13 +136,14 @@
             font-size: 13px;
             text-align: center;
             word-break: break-all;
+            box-sizing: border-box;
         }
 
-        /* 削除ボタンの共通スタイル（高さをPDF/画像ともにコンパクトに統一） */
+        /* 削除ボタンの共通スタイル（高さ・パディングを完全に統一） */
         .remove-btn {
             background-color: #e03131;
             color: white;
-            padding: 8px 12px;
+            padding: 0 12px;
             font-size: 13px;
             font-weight: bold;
             border-radius: 6px;
@@ -152,8 +154,8 @@
             justify-content: center;
             border: none;
             flex: 1;
-            height: auto;
-            min-height: 42px;
+            height: 42px;
+            box-sizing: border-box;
             transition: background-color 0.2s;
         }
         .remove-btn:hover {
