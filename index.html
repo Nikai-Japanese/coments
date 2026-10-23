@@ -400,7 +400,7 @@
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
             document.getElementById("resultCard").style.display = "none";
-            document.getElementById("submitBtn").disabled = false; // ← ここでボタンを確実に復活させる
+            document.getElementById("submitBtn").disabled = false;
             removeImage();
             removePdf();
             document.getElementById("inputText").focus();
@@ -449,9 +449,13 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（中国語選択時の簡体字指定ルールを含め、指定の6言語に最適化）
+            // システムプロンプト（整合性チェック機能を追加）
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
-以下のルールに厳密に従って、**アップロードされた教材（PDF・画像・テキスト等）の言語や内容を自動検出し、元の教材のテキストや質問文（枠組み）をすべて残し、その該当する質問の直下に完成されたコメント（対象言語：${targetLang}、およびその日本語訳）を埋め込んだ全体ノート**を作成してください：
+以下のルールに厳密に従ってノートを作成してください：
+
+【🚨 ファイルの整合性チェック（最重要）】
+- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容（週のテーマ、聖書通読範囲、記事のタイトルなど）と、画像に描かれているビジュアル・内容が**同じ範囲・同じ週のものとして一致しているか**を最初に厳密に確認してください。
+- もし異なる週や異なるページのファイルが間違えて組み合わせてアップロードされている（内容が一致していない）と判断した場合、ノートの作成を一切行わず、**出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力**して処理を終了してください。
 
 【重要：言語および文字の指定】
 - 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用して出力してください。
