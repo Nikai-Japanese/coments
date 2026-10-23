@@ -247,20 +247,16 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
-        <!-- 出力言語設定（プルダウン選択式） -->
+        <!-- 出力言語設定（プルダウン選択式：指定の6言語） -->
         <div style="margin-bottom: 12px;">
             <label for="targetLanguage" style="font-size: 13px; margin-bottom: 4px;">🗣️ 作成・出力言語（会衆の言語）</label>
             <select id="targetLanguage">
                 <option value="インドネシア語" selected>インドネシア語</option>
+                <option value="中国語（簡体字）">中国語（簡体字）</option>
                 <option value="英語">英語</option>
-                <option value="韓国語">韓国語</option>
-                <option value="中国語">中国語</option>
-                <option value="スペイン語">スペイン語</option>
-                <option value="ポルトガル語">ポルトガル語</option>
                 <option value="タガログ語">タガログ語</option>
                 <option value="ベトナム語">ベトナム語</option>
-                <option value="フランス語">フランス語</option>
-                <option value="タイ語">タイ語</option>
+                <option value="日本語">日本語</option>
             </select>
         </div>
 
@@ -452,9 +448,12 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（選択された言語を動的に反映）
+            // システムプロンプト（中国語選択時の簡体字指定ルールを含め、指定の6言語に最適化）
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って、**アップロードされた教材（PDF・画像・テキスト等）の言語や内容を自動検出し、元の教材のテキストや質問文（枠組み）をすべて残し、その該当する質問の直下に完成されたコメント（対象言語：${targetLang}、およびその日本語訳）を埋め込んだ全体ノート**を作成してください：
+
+【重要：言語および文字の指定】
+- 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用して出力してください。
 
 【入力テキスト・画像・PDFの取り扱いと埋め込み出力】
 ・Webサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要なノイズは完全に無視してください。
@@ -561,7 +560,7 @@
 
                     // 対象言語の見出しを緑色に装飾
                     htmlOutput = htmlOutput.replace(
-                        /(■\s*(?:IN|インドネシア語|英語|韓国語|中国語|スペイン語|ポルトガル語|タガログ語|ベトナム語|フランス語|タイ語|[^<>\n]+))/g,
+                        /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
                         function(match) {
                             if (match.includes("JP") || match.includes("日本語訳")) return match;
                             return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
