@@ -33,7 +33,7 @@
             margin-bottom: 8px;
             color: #495057;
         }
-        input[type="password"] {
+        input[type="password"], input[type="text"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ced4da;
@@ -236,6 +236,12 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
+        <!-- 出力言語設定 -->
+        <div style="margin-bottom: 12px;">
+            <label for="targetLanguage" style="font-size: 13px; margin-bottom: 4px;">🗣️ 作成・出力言語（会衆の言語）</label>
+            <input type="text" id="targetLanguage" value="インドネシア語" placeholder="例: インドネシア語、英語、韓国語 など">
+        </div>
+
         <!-- 選択画像プレビュー領域 -->
         <div id="imagePreviewContainer" class="preview-container" style="display: none;">
             <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
@@ -404,6 +410,7 @@
         async function generateComment() {
             const apiKey = document.getElementById("apiKey").value.trim();
             const inputText = document.getElementById("inputText").value.trim();
+            const targetLang = document.getElementById("targetLanguage").value.trim() || "インドネシア語";
             const statusDiv = document.getElementById("status");
             const resultCard = document.getElementById("resultCard");
             const resultText = document.getElementById("resultText");
@@ -423,47 +430,46 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト
-            const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
-以下のルールに厳密に従って、**元の教材のテキストや質問文（枠組み）をすべて残し、その該当する質問の直下に完成されたコメントを埋め込んだ全体ノート**を作成してください：
+            // システムプロンプト（出力言語を動的に反映）
+            const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
+以下のルールに厳密に従って、**アップロードされた教材（PDF・画像・テキスト等）の言語や内容を自動検出し、元の教材のテキストや質問文（枠組み）をすべて残し、その該当する質問の直下に完成されたコメント（対象言語：${targetLang}、およびその日本語訳）を埋め込んだ全体ノート**を作成してください：
 
 【入力テキスト・画像・PDFの取り扱いと埋め込み出力】
 ・Webサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要なノイズは完全に無視してください。
 ・最初のパート「HARTA DALAM FIRMAN ALLAH」の最初の10分の話については答える必要はありません。完全に無視してください。
-・「2. Permata Rohani」以下のセクションについて、**元の教材のインドネシア語テキスト・質問文を漏れなくそのまま順序通りに出力**してください。
-・各質問文や各段落の直下に「【回答・コメント埋め込み枠】」として、作成したコメント（インドネシア語＋日本語訳）を直接埋め込んで配置してください。
-・「2. Permata Rohani」の聖書通読範囲の質問（Dari pembacaan Alkitab minggu ini, permata rohani apa yang mau Saudara bagikan?）については、その週の通読範囲内の各章ごとに（例：[Pasal 45]、[Pasal 46]など）見出しを立て、各章からの霊的な宝石（コメントと日本語訳）を埋め込んでください。
-・画像が添付されている場合、画像内の挿絵から学べる教訓（Pelajaran dari gambar）も該当する質問・段落の直下にコメントとして埋め込んでください。
+・「2. Permata Rohani」以下のセクションについて、**元の教材のテキスト・質問文を漏れなくそのまま順序通りに出力**してください。
+・各質問文や各段落の直下に「【回答・コメント埋め込み枠】」として、作成したコメント（${targetLang}＋日本語訳）を直接埋め込んで配置してください。
+・「2. Permata Rohani」の聖書通読範囲の質問については、その週の通読範囲内の各章ごとに見出しを立て、各章からの霊的な宝石（コメントと日本語訳）を埋め込んでください。
+・画像が添付されている場合、画像内の挿絵から学べる教訓も該当する質問・段落の直下にコメントとして埋め込んでください。
 
 【出力ルール】
-1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔なインドネシア語表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
+1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
 2. 各質問に対するコメントは異なった観点から2〜3つ書き出すこと。
 3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
-4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（例：Paulus, Filemon, Onesimus, Yehuwa, Sidang）。教会用語は使用しない。
-5. 人を指す場合は orang、それ以外の事柄・方法・点は ini / hal ini / dengan cara ini を適切に使い分ける。
-6. 略語（yg など）は使わず、正式な表記（yang など）にする。
-7. カタカナ発音ガイドは出力しない。
-8. 各質問の見出しには、必ず「インドネシア語の質問文」と「日本語訳」の両方を併記すること。
-9. コメントが複数（2〜3つ）ある場合は、必ず1つのコメントごとに【■ IN ➔ ■ JP】の順番で交互に出力すること。
-10. **【重要・区切り線】異なる質問の間、および異なるコメントの間には、必ず見やすいようにダッシュ線（例: -------------------------------------）を挿入して、どこで区切られているかをテキスト上で明確にすること。**
+4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（例：Paulus, Filemon, Onesimus, Yehuwa, Sidang など、対象言語の一般的な新世界訳表記に合わせる）。教会用語は使用しない。
+5. 略語（yg など）は使わず、正式な表記にする。
+6. カタカナ発音ガイドは出力しない。
+7. 各質問の見出しには、必ず「元の言語の質問文」と「日本語訳」の両方を併記すること。
+8. コメントが複数（2〜3つ）ある場合は、必ず1つのコメントごとに【■ 対象言語の略称 ➔ ■ JP】（例：■ ${targetLang} ➔ ■ 日本語訳）の順番で交互に出力すること。
+9. **【重要・区切り線】異なる質問の間、および異なるコメントの間には、必ず見やすいようにダッシュ線（例: -------------------------------------）を挿入して、どこで区切られているかをテキスト上で明確にすること。**
 
 【出力フォーマット例】
 -----------------------------------
 ■ 【質問〇 / Pertanyaan 〇】
-[ここに教材元のインドネシア語質問文をそのまま出力]
+[ここに教材元の質問文をそのまま出力]
 （[ここに質問の日本語訳]）
 
 ▼ コメント 1
-■ IN
-[1つ目のインドネシア語コメント]
+■ ${targetLang}
+[1つ目の${targetLang}コメント]
 
 ■ JP
 [1つ目の日本語訳]
 
 --------------------------------------------------
 ▼ コメント 2
-■ IN
-[2つ目のインドネシア語コメント]
+■ ${targetLang}
+[2つ目の${targetLang}コメント]
 
 ■ JP
 [2つ目の日本語訳]
@@ -476,7 +482,7 @@
                 combinedInput = "--- 【PDF抽出テキスト】 ---\n" + extractedPdfText + "\n\n--- 【追加ユーザーテキスト】 ---\n" + inputText;
             }
 
-            const promptText = `以下のテキストおよび画像に含まれる「2. Permata Rohani」以降のすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に挿絵の教訓も含めた集会用インドネシア語コメントとその日本語訳を埋め込んで出力してください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
+            const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメントとその日本語訳を埋め込んで出力してください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
 
             // リクエストパーツの構築（テキスト ＋ 画像も両方あれば両方含める）
             const parts = [{ text: promptText }];
@@ -531,10 +537,13 @@
                         '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
                     );
 
-                    // インドネシア語の見出し（■ IN / ■ インドネシア語）を緑色に装飾
+                    // 対象言語の見出しを緑色に装飾
                     htmlOutput = htmlOutput.replace(
-                        /(■\s*(?:IN|インドネシア語))/g,
-                        '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
+                        /(■\s*(?:IN|インドネシア語|英語|韓国語|中国語|スペイン語|ポルトガル語|[^<>\n]+))/g,
+                        function(match) {
+                            if (match.includes("JP") || match.includes("日本語訳")) return match;
+                            return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
+                        }
                     );
 
                     // 日本語訳の見出し（■ JP / ■ 日本語訳）を黄土色に装飾
