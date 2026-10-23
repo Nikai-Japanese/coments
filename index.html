@@ -124,4 +124,607 @@
             gap: 8px;
             margin-bottom: 10px;
         }
-        .image-
+        .image-preview {
+            width: 100%;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            box-sizing: border-box;
+            grid-column: span 2;
+        }
+        .pdf-badge {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            height: 42px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #495057;
+            font-size: 13px;
+            text-align: center;
+            word-break: break-all;
+            box-sizing: border-box;
+            grid-column: span 2;
+        }
+        .remove-btn {
+            background-color: #e03131;
+            color: white;
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            height: 42px;
+            box-sizing: border-box;
+            grid-column: span 2;
+            transition: background-color 0.2s;
+        }
+        .remove-btn:hover {
+            background-color: #c92a2a;
+        }
+
+        /* 結果ボックス＆右上固定コピーボタン */
+        .result-container {
+            position: relative;
+            background-color: #272822;
+            border-radius: 8px;
+            max-height: 550px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .copy-btn-header {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px 0 15px;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .action-btns {
+            pointer-events: auto;
+            display: flex;
+            gap: 8px;
+        }
+        .copy-btn, .cloud-save-btn {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.15);
+            color: #f8f8f2;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .copy-btn:hover, .cloud-save-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .result-box {
+            color: #f8f8f2;
+            padding: 5px 20px 20px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #e03131;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .loading {
+            color: #1c7ed6;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .history-item {
+            background: #f1f3f5;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .history-item span {
+            font-weight: bold;
+            color: #212529;
+        }
+        .history-btn {
+            background: #20c997;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .history-btn:hover {
+            background: #0ca678;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- APIキー設定カード -->
+    <div class="card" style="padding: 12px 20px;">
+        <button type="button" onclick="toggleApiKey()" style="background: transparent; color: #495057; border: 1px dashed #ced4da; padding: 8px 12px; width: 100%; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span>🔑 Gemini APIキー設定</span>
+            <span id="apiToggleArrow">▼</span>
+        </button>
+        <div id="apiKeyContent" style="display: none; margin-top: 12px;">
+            <label for="apiKey">Gemini API Key</label>
+            <input type="password" id="apiKey" placeholder="AIzaSy..." oninput="saveApiKey()">
+        </div>
+    </div>
+
+    <!-- Supabase設定カード -->
+    <div class="card" style="padding: 12px 20px;">
+        <button type="button" onclick="toggleSupabaseKey()" style="background: transparent; color: #495057; border: 1px dashed #ced4da; padding: 8px 12px; width: 100%; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span>☁️ Supabase設定（クラウド同期）</span>
+            <span id="supabaseToggleArrow">▼</span>
+        </button>
+        <div id="supabaseKeyContent" style="display: none; margin-top: 12px;">
+            <label for="sbUrl">Supabase Project URL</label>
+            <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co" oninput="saveSupabaseConfig()">
+            <label for="sbKey">Supabase Anon Key</label>
+            <input type="password" id="sbKey" placeholder="eyJhbGciOi..." oninput="saveSupabaseConfig()">
+            <button type="button" onclick="loadHistoryFromCloud()" style="background: #339af0; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;">🔄 クラウドから履歴を読み込む</button>
+        </div>
+    </div>
+
+    <!-- テキスト入力カード -->
+    <div class="card">
+        <div style="margin-bottom: 12px;">
+            <label for="targetLanguage" style="font-size: 13px; margin-bottom: 4px;">🗣️ 作成・出力言語（会衆の言語）</label>
+            <select id="targetLanguage">
+                <option value="インドネシア語" selected>インドネシア語</option>
+                <option value="中国語（簡体字）">中国語（簡体字）</option>
+                <option value="英語">英語</option>
+                <option value="タガログ語">タガログ語</option>
+                <option value="ベトナム語">ベトナム語</option>
+                <option value="日本語">日本語</option>
+            </select>
+        </div>
+
+        <!-- 画像プレビュー -->
+        <div id="imagePreviewContainer" class="preview-container" style="display: none;">
+            <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
+            <button type="button" class="remove-btn" onclick="removeImage()">❌ 画像削除</button>
+        </div>
+
+        <!-- PDFプレビュー -->
+        <div id="pdfPreviewContainer" class="preview-container" style="display: none;">
+            <div id="pdfBadge" class="pdf-badge">📄 PDF読み込み済み</div>
+            <button type="button" class="remove-btn" onclick="removePdf()">❌ PDF削除</button>
+        </div>
+
+        <textarea id="inputText" placeholder=""></textarea>
+        
+        <!-- ボタン群 -->
+        <div class="btn-group">
+            <button id="submitBtn" class="btn-primary" onclick="generateComment()">GO!</button>
+            <label class="image-input-btn" for="imageInput">📷 画像</label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+            <label class="pdf-input-btn" for="pdfInput">📄 PDF</label>
+            <input type="file" id="pdfInput" accept="application/pdf" style="display: none;" onchange="handlePdfSelect(event)">
+            <button class="clear-btn" onclick="clearText()">消去</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <!-- 結果表示カード -->
+    <div class="card" id="resultCard" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 10px;">
+            <div>
+                <label for="noteDate" style="font-size: 13px;">📅 集会の週・日付</label>
+                <input type="text" id="noteDate" placeholder="例: 10月26日の週">
+            </div>
+            <div>
+                <label for="noteTitle" style="font-size: 13px;">📝 タイトル・範囲</label>
+                <input type="text" id="noteTitle" placeholder="例: エフェソス 4-6章">
+            </div>
+        </div>
+        <div class="result-container">
+            <div class="copy-btn-header">
+                <div style="color: #a6e22e; font-size: 13px; font-weight: bold; pointer-events: auto;" id="saveStatus"></div>
+                <div class="action-btns">
+                    <button id="cloudSaveBtn" class="cloud-save-btn" onclick="saveToCloud()">☁️ クラウドに保存</button>
+                    <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
+                </div>
+            </div>
+            <div class="result-box" id="resultText"></div>
+        </div>
+    </div>
+
+    <!-- 履歴一覧表示カード -->
+    <div class="card" id="historyCard" style="display: none;">
+        <label style="font-size: 14px; margin-bottom: 10px;">📚 クラウド保存された過去の履歴</label>
+        <div id="historyList" style="max-height: 250px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        let selectedBase64Image = null;
+        let selectedMimeType = null;
+        let extractedPdfText = "";
+        let supabaseClient = null;
+
+        window.onload = function() {
+            const savedApiKey = localStorage.getItem("gemini_api_key");
+            if (savedApiKey) document.getElementById("apiKey").value = savedApiKey;
+
+            const savedUrl = localStorage.getItem("sb_url");
+            const savedKey = localStorage.getItem("sb_key");
+            if (savedUrl) document.getElementById("sbUrl").value = savedUrl;
+            if (savedKey) document.getElementById("sbKey").value = savedKey;
+
+            initSupabase();
+        };
+
+        function initSupabase() {
+            const url = document.getElementById("sbUrl").value.trim();
+            const key = document.getElementById("sbKey").value.trim();
+            if (url && key && window.supabase) {
+                try {
+                    supabaseClient = window.supabase.createClient(url, key);
+                } catch (e) {
+                    console.error("Supabase init error:", e);
+                }
+            }
+        }
+
+        function toggleApiKey() {
+            const content = document.getElementById("apiKeyContent");
+            const arrow = document.getElementById("apiToggleArrow");
+            if (content.style.display === "none") {
+                content.style.display = "block";
+                arrow.textContent = "▲";
+            } else {
+                content.style.display = "none";
+                arrow.textContent = "▼";
+            }
+        }
+
+        function toggleSupabaseKey() {
+            const content = document.getElementById("supabaseKeyContent");
+            const arrow = document.getElementById("supabaseToggleArrow");
+            if (content.style.display === "none") {
+                content.style.display = "block";
+                arrow.textContent = "▲";
+            } else {
+                content.style.display = "none";
+                arrow.textContent = "▼";
+            }
+        }
+
+        function saveApiKey() {
+            localStorage.setItem("gemini_api_key", document.getElementById("apiKey").value.trim());
+        }
+
+        function saveSupabaseConfig() {
+            const url = document.getElementById("sbUrl").value.trim();
+            const key = document.getElementById("sbKey").value.trim();
+            localStorage.setItem("sb_url", url);
+            localStorage.setItem("sb_key", key);
+            initSupabase();
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            selectedMimeType = file.type;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                selectedBase64Image = dataUrl.split(',')[1];
+                document.getElementById("imagePreview").src = dataUrl;
+                document.getElementById("imagePreviewContainer").style.display = "grid";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            selectedBase64Image = null;
+            selectedMimeType = null;
+            document.getElementById("imageInput").value = "";
+            document.getElementById("imagePreview").src = "";
+            document.getElementById("imagePreviewContainer").style.display = "none";
+        }
+
+        async function handlePdfSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const statusDiv = document.getElementById("status");
+            statusDiv.innerHTML = '<div class="loading">PDFを解析中...</div>';
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdfDoc = await loadingTask.promise;
+                let fullText = "";
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(" ");
+                    fullText += `--- Page ${i} ---\n` + pageText + "\n";
+                }
+                extractedPdfText = fullText;
+                document.getElementById("pdfBadge").textContent = `📄 ${file.name} (${pdfDoc.numPages}ページ)`;
+                document.getElementById("pdfPreviewContainer").style.display = "grid";
+                statusDiv.innerHTML = "";
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="error">❌ PDFの解析に失敗しました: ${err.message}</div>`;
+                document.getElementById("pdfInput").value = "";
+            }
+        }
+
+        function removePdf() {
+            extractedPdfText = "";
+            document.getElementById("pdfInput").value = "";
+            document.getElementById("pdfPreviewContainer").style.display = "none";
+        }
+
+        function clearText() {
+            document.getElementById("inputText").value = "";
+            document.getElementById("noteDate").value = "";
+            document.getElementById("noteTitle").value = "";
+            document.getElementById("status").innerHTML = "";
+            document.getElementById("resultCard").style.display = "none";
+            document.getElementById("submitBtn").disabled = false;
+            removeImage();
+            removePdf();
+            document.getElementById("inputText").focus();
+        }
+
+        function copyResult() {
+            const resultTextEl = document.getElementById("resultText");
+            navigator.clipboard.writeText(resultTextEl.innerText).then(() => {
+                const copyBtn = document.getElementById("copyBtn");
+                copyBtn.textContent = "✅ 完了！";
+                setTimeout(() => { copyBtn.textContent = "📋 すべてコピー"; }, 2000);
+            });
+        }
+
+        // クラウドに保存する関数
+        async function saveToCloud() {
+            if (!supabaseClient) {
+                alert("Supabaseの設定が完了していません。設定画面からURLとAnon Keyを入力してください。");
+                return;
+            }
+            const dateVal = document.getElementById("noteDate").value.trim() || "日時未設定";
+            const titleVal = document.getElementById("noteTitle").value.trim() || "無題のノート";
+            const targetLang = document.getElementById("targetLanguage").value;
+            const content = document.getElementById("resultText").innerHTML;
+            const saveStatus = document.getElementById("saveStatus");
+
+            // タイトルと日付を組み合わせて保存
+            const fullTitle = `[${dateVal}] ${titleVal}`;
+
+            saveStatus.textContent = "保存中...";
+
+            const { data, error } = await supabaseClient
+                .from('notes')
+                .insert([{ title: fullTitle, target_lang: targetLang, content: content, memo: `${dateVal} - ${titleVal}` }]);
+
+            if (error) {
+                saveStatus.textContent = "❌ 保存失敗";
+                alert("保存エラー: " + error.message);
+            } else {
+                saveStatus.textContent = "✅ クラウド保存完了！";
+                loadHistoryFromCloud();
+                setTimeout(() => { saveStatus.textContent = ""; }, 3000);
+            }
+        }
+
+        // クラウドから履歴を読み込む関数
+        async function loadHistoryFromCloud() {
+            if (!supabaseClient) {
+                alert("Supabaseの設定が完了していません。");
+                return;
+            }
+            const historyCard = document.getElementById("historyCard");
+            const historyList = document.getElementById("historyList");
+            historyList.innerHTML = '<div class="loading">履歴を読み込み中...</div>';
+            historyCard.style.display = "block";
+
+            const { data, error } = await supabaseClient
+                .from('notes')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                historyList.innerHTML = `<div class="error">読み込みエラー: ${error.message}</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                historyList.innerHTML = '<div style="color: #6c757d; font-size: 13px;">保存された履歴はありません。</div>';
+                return;
+            }
+
+            let html = "";
+            data.forEach(item => {
+                html += `
+                    <div class="history-item">
+                        <div>
+                            <span>${item.title || '無題'}</span> <small style="color: #6c757d;">[${item.target_lang}]</small>
+                        </div>
+                        <button class="history-btn" onclick='restoreHistory(${JSON.stringify(item.content)})'>開く</button>
+                    </div>
+                `;
+            });
+            historyList.innerHTML = html;
+        }
+
+        window.restoreHistory = function(contentHtml) {
+            document.getElementById("resultText").innerHTML = contentHtml;
+            document.getElementById("resultCard").style.display = "block";
+            window.scrollTo({ top: document.getElementById("resultCard").offsetTop, behavior: 'smooth' });
+        };
+
+        async function generateComment() {
+            const apiKey = document.getElementById("apiKey").value.trim();
+            const inputText = document.getElementById("inputText").value.trim();
+            const targetLang = document.getElementById("targetLanguage").value;
+            const statusDiv = document.getElementById("status");
+            const resultCard = document.getElementById("resultCard");
+            const resultText = document.getElementById("resultText");
+            const submitBtn = document.getElementById("submitBtn");
+
+            if (!apiKey) {
+                statusDiv.innerHTML = '<div class="error">⚠️ APIキーを入力してください。</div>';
+                return;
+            }
+            if (!inputText && !selectedBase64Image && !extractedPdfText) {
+                statusDiv.innerHTML = '<div class="error">⚠️ テキスト、画像、またはPDFを入力してください。</div>';
+                return;
+            }
+
+            statusDiv.innerHTML = '<div class="loading">作成中...</div>';
+            submitBtn.disabled = true;
+            resultCard.style.display = "none";
+
+            const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
+以下のルールに厳密に従ってノートを作成してください：
+
+【🚨 ファイルの整合性チェック（最重要）】
+- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容と、画像に描かれているビジュアル・内容が同じ範囲・同じ週のものとして一致しているかを最初に厳密に確認してください。
+- 異なる週や異なるページのファイルが間違えて組み合わせてアップロードされていると判断した場合、出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力して処理を終了してください。
+
+【重要：言語および文字の指定】
+- 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用して出力してください。
+
+【入力テキスト・画像・PDFの取り扱いと埋め込み出力】
+・Webサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要なノイズは完全に無視してください。
+・最初のパート「HARTA DALAM FIRMAN ALLAH」の最初の10分の話については答える必要はありません。完全に無視してください。
+・「2. Permata Rohani」以下のセクションについて、元の教材のテキスト・質問文を漏れなくそのまま順序通りに出力してください。
+・各質問文や各段落の直下に「【回答・コメント埋め込み枠】」として、作成したコメント（${targetLang}＋日本語訳）を直接埋め込んで配置してください。
+・「2. Permata Rohani」の聖書通読範囲の質問については、その週の通読範囲内の各章ごとに見出しを立て、各章からの霊的な宝石を埋め込んでください。
+・画像が添付されている場合、画像内の挿絵から学べる教訓も該当する質問・段落の直下にコメントとして埋め込んでください。
+
+【出力ルール】
+1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
+2. 各質問に対するコメントは異なった観点から2〜3つ書き出すこと。
+3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
+4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる。教会用語は使用しない。
+5. 略語は使わず、正式な表記にする。
+6. カタカナ発音ガイドは出力しない。
+7. 【日本語訳のルール】具体的に答えるべき「質問文」や「コメント内容」が存在する場所のみに日本語訳を併記してください。単なる見出し、セクション名など「質問がない箇所」については日本語訳を出力せず、元の言語のみを出力してください。
+8. コメントが複数ある場合は、必ず1つのコメントごとに【■ ${targetLang} ➔ ■ 日本語訳】の順番で交互に出力すること。
+9. 【重要・区切り線】異なる質問の間、および異なるコメントの間には、必ず見やすいようにダッシュ線を挿入すること。
+
+【出力フォーマット例】
+-----------------------------------
+■ 【質問〇 / Pertanyaan 〇】
+[ここに教材元の質問文をそのまま出力]
+（[質問文の日本語訳]）
+
+▼ コメント 1
+■ ${targetLang}
+[1つ目の${targetLang}コメント]
+
+■ JP
+[1つ目の日本語訳]
+
+--------------------------------------------------
+▼ コメント 2
+■ ${targetLang}
+[2つ目の${targetLang}コメント]
+
+■ JP
+[2つ目の日本語訳]
+
+10. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
+
+            let combinedInput = inputText;
+            if (extractedPdfText) {
+                combinedInput = "--- 【PDF抽出テキスト】 ---\n" + extractedPdfText + "\n\n--- 【追加ユーザーテキスト】 ---\n" + inputText;
+            }
+
+            const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメントとその日本語訳を埋め込んでください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
+
+            const parts = [{ text: promptText }];
+            if (selectedBase64Image) {
+                parts.unshift({
+                    inlineData: {
+                        mimeType: selectedMimeType,
+                        data: selectedBase64Image
+                    }
+                });
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+            const requestBody = {
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                contents: [{ parts: parts }]
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestBody)
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    let rawOutput = data.candidates[0].content.parts[0].text;
+                    let htmlOutput = rawOutput
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;");
+
+                    htmlOutput = htmlOutput.replace(
+                        /(■\s*【[^】]+】)/g,
+                        '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 15px; margin-bottom: 8px;">$1</div>'
+                    );
+                    htmlOutput = htmlOutput.replace(
+                        /(▼\s*コメント\s*\d+[^\n]*)/g,
+                        '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
+                    );
+                    htmlOutput = htmlOutput.replace(
+                        /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
+                        function(match) {
+                            if (match.includes("JP") || match.includes("日本語訳")) return match;
+                            return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
+                        }
+                    );
+                    htmlOutput = htmlOutput.replace(
+                        /(■\s*(?:JP|日本語訳))/g,
+                        '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
+                    );
+
+                    resultText.innerHTML = htmlOutput;
+                    resultCard.style.display = "block";
+                    statusDiv.innerHTML = "";
+                    
+                    document.getElementById("noteDate").value = "10月26日の週";
+                    document.getElementById("noteTitle").value = targetLang + " ノート";
+                } else {
+                    statusDiv.innerHTML = `<div class="error">❌ エラーが発生しました: ${data.error.message}</div>`;
+                }
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="error">❌ 通信エラーが発生しました: ${err.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
