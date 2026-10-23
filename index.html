@@ -247,7 +247,7 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
-        <!-- 出力言語設定（プルダウン選択式：指定の6言語） -->
+        <!-- 出力言語設定（選択式：指定の6言語） -->
         <div style="margin-bottom: 12px;">
             <label for="targetLanguage" style="font-size: 13px; margin-bottom: 4px;">🗣️ 作成・出力言語（会衆の言語）</label>
             <select id="targetLanguage">
@@ -395,11 +395,12 @@
             document.getElementById("pdfPreviewContainer").style.display = "none";
         }
 
-        // テキストエリアと結果をすべてクリアする関数
+        // テキストエリアと結果をすべてクリアする関数（GO!ボタンの無効化も強制解除）
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
             document.getElementById("resultCard").style.display = "none";
+            document.getElementById("submitBtn").disabled = false; // ← ここでボタンを確実に復活させる
             removeImage();
             removePdf();
             document.getElementById("inputText").focus();
