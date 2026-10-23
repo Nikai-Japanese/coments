@@ -304,12 +304,10 @@
             localStorage.setItem("gemini_api_key", key);
         }
 
-        // 画像選択処理
+        // 画像選択処理（PDFとは独立して保持）
         function handleImageSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            removePdf(); // 画像選んだらPDFはクリア
 
             selectedMimeType = file.type;
             const reader = new FileReader();
@@ -332,12 +330,10 @@
             document.getElementById("imagePreviewContainer").style.display = "none";
         }
 
-        // PDF選択＆テキスト抽出処理
+        // PDF選択＆テキスト抽出処理（画像とは独立して保持）
         async function handlePdfSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            removeImage(); // PDF選んだら画像はクリア
 
             const statusDiv = document.getElementById("status");
             statusDiv.innerHTML = '<div class="loading">PDFを解析中...</div>';
@@ -424,7 +420,7 @@
             submitBtn.disabled = true;
             resultCard.style.display = "none";
 
-            // システムプロンプト（元の文面・質問をそのまま残し、直下にコメントを埋め込む指示）
+            // システムプロンプト
             const systemInstruction = `あなたはエホバの証人のインドネシア語会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従って、**元の教材のテキストや質問文（枠組み）をすべて残し、その該当する質問の直下に完成されたコメントを埋め込んだ全体ノート**を作成してください：
 
@@ -479,7 +475,7 @@
 
             const promptText = `以下のテキストおよび画像に含まれる「2. Permata Rohani」以降のすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に挿絵の教訓も含めた集会用インドネシア語コメントとその日本語訳を埋め込んで出力してください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
 
-            // リクエストパーツの構築（テキスト ＋ 画像）
+            // リクエストパーツの構築（テキスト ＋ 画像も両方あれば両方含める）
             const parts = [{ text: promptText }];
             if (selectedBase64Image) {
                 parts.unshift({
