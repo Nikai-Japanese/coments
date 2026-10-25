@@ -174,50 +174,22 @@
             background-color: #c92a2a;
         }
 
-        /* 結果ボックス＆右上固定コピーボタン */
-        .result-container {
-            position: relative;
-            background-color: #272822;
-            border-radius: 8px;
-            max-height: 550px;
-            overflow-y: auto;
-            margin-top: 10px;
-        }
-        .copy-btn-header {
-            position: sticky;
-            top: 0;
-            display: flex;
-            justify-content: flex-end;
-            padding: 10px 15px 0 0;
-            z-index: 20;
-            pointer-events: none;
-        }
+        /* 個別セクション用コピーボタン */
         .copy-btn {
-            pointer-events: auto;
             background: rgba(255, 255, 255, 0.15);
             color: #f8f8f2;
             border: 1px solid rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(4px);
-            padding: 6px 14px;
+            padding: 5px 12px;
             font-size: 12px;
             font-weight: 600;
-            border-radius: 20px;
+            border-radius: 15px;
             cursor: pointer;
-            width: auto;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
         .copy-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             border-color: rgba(255, 255, 255, 0.4);
-        }
-        .result-box {
-            color: #f8f8f2;
-            padding: 5px 20px 20px 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 15px;
-            line-height: 1.6;
-            white-space: pre-wrap;
         }
         .error {
             color: #e03131;
@@ -289,15 +261,8 @@
         <div id="status"></div>
     </div>
 
-    <!-- 結果表示カード -->
-    <div class="card" id="resultCard" style="display: none;">
-        <div class="result-container">
-            <div class="copy-btn-header">
-                <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
-            </div>
-            <div class="result-box" id="resultText"></div>
-        </div>
-    </div>
+    <!-- 結果表示コンテナ（セクションごとに分割してカードを生成） -->
+    <div id="resultsContainer" style="display: none;"></div>
 
     <script>
         let selectedBase64Image = null;
@@ -395,31 +360,33 @@
             document.getElementById("pdfPreviewContainer").style.display = "none";
         }
 
-        // テキストエリアと結果をすべてクリアする関数（GO!ボタンの無効化も強制解除）
+        // テキストエリアと結果をすべてクリアする関数
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
-            document.getElementById("resultCard").style.display = "none";
+            const resultsContainer = document.getElementById("resultsContainer");
+            resultsContainer.style.display = "none";
+            resultsContainer.innerHTML = "";
             document.getElementById("submitBtn").disabled = false;
             removeImage();
             removePdf();
             document.getElementById("inputText").focus();
         }
 
-        // 結果をすべてコピーする関数
-        function copyResult() {
-            const resultTextEl = document.getElementById("resultText");
-            const textToCopy = resultTextEl.innerText;
+        // 各セクションごとのコピー関数
+        function copySectionText(buttonEl) {
+            const sectionCard = buttonEl.closest('.card');
+            const textContentEl = sectionCard.querySelector('.result-box-content');
+            const textToCopy = textContentEl.innerText;
 
             navigator.clipboard.writeText(textToCopy).then(() => {
-                const copyBtn = document.getElementById("copyBtn");
-                copyBtn.textContent = "✅ コピー完了！";
-                copyBtn.style.backgroundColor = "#20c997";
-                copyBtn.style.borderColor = "#20c997";
+                buttonEl.textContent = "✅ コピー完了！";
+                buttonEl.style.backgroundColor = "#20c997";
+                buttonEl.style.borderColor = "#20c997";
                 setTimeout(() => {
-                    copyBtn.textContent = "📋 すべてコピー";
-                    copyBtn.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
-                    copyBtn.style.borderColor = "rgba(255, 255, 255, 0.25)";
+                    buttonEl.textContent = "📋 このセクションをコピー";
+                    buttonEl.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
+                    buttonEl.style.borderColor = "rgba(255, 255, 255, 0.25)";
                 }, 2000);
             }).catch(err => {
                 alert("コピーに失敗しました: " + err);
@@ -431,8 +398,7 @@
             const inputText = document.getElementById("inputText").value.trim();
             const targetLang = document.getElementById("targetLanguage").value;
             const statusDiv = document.getElementById("status");
-            const resultCard = document.getElementById("resultCard");
-            const resultText = document.getElementById("resultText");
+            const resultsContainer = document.getElementById("resultsContainer");
             const submitBtn = document.getElementById("submitBtn");
 
             if (!apiKey) {
@@ -447,9 +413,10 @@
             // 状態更新
             statusDiv.innerHTML = '<div class="loading">作成中...</div>';
             submitBtn.disabled = true;
-            resultCard.style.display = "none";
+            resultsContainer.style.display = "none";
+            resultsContainer.innerHTML = "";
 
-            // システムプロンプト（整合性チェック機能を追加）
+            // システムプロンプト
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従ってノートを作成してください：
 
@@ -502,7 +469,6 @@
 
 11. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-            // 入力データ（テキスト＋PDFテキスト＋ユーザー記入分）を統合
             let combinedInput = inputText;
             if (extractedPdfText) {
                 combinedInput = "--- 【PDF抽出テキスト】 ---\n" + extractedPdfText + "\n\n--- 【追加ユーザーテキスト】 ---\n" + inputText;
@@ -510,7 +476,6 @@
 
             const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメントとその日本語訳を埋め込んで出力してください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
 
-            // リクエストパーツの構築（テキスト ＋ 画像も両方あれば両方含める）
             const parts = [{ text: promptText }];
             if (selectedBase64Image) {
                 parts.unshift({
@@ -521,7 +486,6 @@
                 });
             }
 
-            // Gemini API呼び出し (gemini-3.8-flash)
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
             const requestBody = {
@@ -545,41 +509,59 @@
                 if (response.ok) {
                     let rawOutput = data.candidates[0].content.parts[0].text;
 
-                    // 安全なHTMLエスケープ処理
-                    let htmlOutput = rawOutput
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;");
+                    // ダッシュ線でセクションごとに分割
+                    const rawSections = rawOutput.split(/-{3,}/).filter(sec => sec.trim().length > 0);
 
-                    // 質問の見出し（■ 【...】）の装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(■\s*【[^】]+】)/g,
-                        '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 15px; margin-bottom: 8px;">$1</div>'
-                    );
+                    resultsContainer.style.display = "block";
 
-                    // コメントの見出し（▼ コメント 1 ...）の装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(▼\s*コメント\s*\d+[^\n]*)/g,
-                        '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
-                    );
+                    rawSections.forEach((sectionText) => {
+                        let htmlOutput = sectionText
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;");
 
-                    // 対象言語の見出しを緑色に装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
-                        function(match) {
-                            if (match.includes("JP") || match.includes("日本語訳")) return match;
-                            return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
-                        }
-                    );
+                        // 質問の見出し
+                        htmlOutput = htmlOutput.replace(
+                            /(■\s*【[^】]+】)/g,
+                            '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 5px; margin-bottom: 8px;">$1</div>'
+                        );
 
-                    // 日本語訳の見出し（■ JP / ■ 日本語訳）を黄土色に装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(■\s*(?:JP|日本語訳))/g,
-                        '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
-                    );
+                        // コメントの見出し
+                        htmlOutput = htmlOutput.replace(
+                            /(▼\s*コメント\s*\d+[^\n]*)/g,
+                            '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
+                        );
 
-                    resultText.innerHTML = htmlOutput;
-                    resultCard.style.display = "block";
+                        // 対象言語の見出し
+                        htmlOutput = htmlOutput.replace(
+                            /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
+                            function(match) {
+                                if (match.includes("JP") || match.includes("日本語訳")) return match;
+                                return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
+                            }
+                        );
+
+                        // 日本語訳の見出し
+                        htmlOutput = htmlOutput.replace(
+                            /(■\s*(?:JP|日本語訳))/g,
+                            '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
+                        );
+
+                        // セクションごとにカードを生成
+                        const sectionCard = document.createElement("div");
+                        sectionCard.className = "card";
+                        sectionCard.style.cssText = "background-color: #272822; color: #f8f8f2; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08);";
+                        
+                        sectionCard.innerHTML = `
+                            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                                <button class="copy-btn" onclick="copySectionText(this)">📋 このセクションをコピー</button>
+                            </div>
+                            <div class="result-box-content" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${htmlOutput}</div>
+                        `;
+
+                        resultsContainer.appendChild(sectionCard);
+                    });
+
                     statusDiv.innerHTML = "";
                 } else {
                     statusDiv.innerHTML = `<div class="error">❌ エラーが発生しました: ${data.error.message}</div>`;
