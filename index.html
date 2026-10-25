@@ -261,7 +261,7 @@
         <div id="status"></div>
     </div>
 
-    <!-- 結果表示コンテナ（セクションごとに分割してカードを生成） -->
+    <!-- 結果表示コンテナ -->
     <div id="resultsContainer" style="display: none;"></div>
 
     <script>
@@ -269,7 +269,6 @@
         let selectedMimeType = null;
         let extractedPdfText = "";
 
-        // ページ読み込み時に保存されたAPIキーを復元
         window.onload = function() {
             const savedKey = localStorage.getItem("gemini_api_key");
             if (savedKey) {
@@ -277,7 +276,6 @@
             }
         };
 
-        // APIキーの開閉切り替え
         function toggleApiKey() {
             const content = document.getElementById("apiKeyContent");
             const arrow = document.getElementById("apiToggleArrow");
@@ -290,13 +288,11 @@
             }
         }
 
-        // APIキーの保存
         function saveApiKey() {
             const key = document.getElementById("apiKey").value.trim();
             localStorage.setItem("gemini_api_key", key);
         }
 
-        // 画像選択処理（PDFとは独立して保持）
         function handleImageSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -313,7 +309,6 @@
             reader.readAsDataURL(file);
         }
 
-        // 画像削除処理
         function removeImage() {
             selectedBase64Image = null;
             selectedMimeType = null;
@@ -322,7 +317,6 @@
             document.getElementById("imagePreviewContainer").style.display = "none";
         }
 
-        // PDF選択＆テキスト抽出処理（画像とは独立して保持）
         async function handlePdfSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -353,14 +347,12 @@
             }
         }
 
-        // PDF削除処理
         function removePdf() {
             extractedPdfText = "";
             document.getElementById("pdfInput").value = "";
             document.getElementById("pdfPreviewContainer").style.display = "none";
         }
 
-        // テキストエリアと結果をすべてクリアする関数
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
@@ -373,7 +365,6 @@
             document.getElementById("inputText").focus();
         }
 
-        // 各セクションごとのコピー関数
         function copySectionText(buttonEl) {
             const sectionCard = buttonEl.closest('.card');
             const textContentEl = sectionCard.querySelector('.result-box-content');
@@ -410,71 +401,35 @@
                 return;
             }
 
-            // 状態更新
             statusDiv.innerHTML = '<div class="loading">作成中...</div>';
             submitBtn.disabled = true;
             resultsContainer.style.display = "none";
             resultsContainer.innerHTML = "";
 
-            // システムプロンプト
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従ってノートを作成してください：
 
 【🚨 ファイルの整合性チェック（最重要）】
-- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容（週のテーマ、聖書通読範囲、記事のタイトルなど）と、画像に描かれているビジュアル・内容が**同じ範囲・同じ週のものとして一致しているか**を最初に厳密に確認してください。
-- もし異なる週や異なるページのファイルが間違えて組み合わせてアップロードされている（内容が一致していない）と判断した場合、ノートの作成を一切行わず、**出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力**して処理を終了してください。
+- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容と画像に描かれている内容が同じ範囲・同じ週のものとして一致しているかを最初に厳密に確認してください。
+- 一致していない場合は出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力して処理を終了してください。
 
 【重要：言語および文字の指定】
-- 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用して出力してください。
+- 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用してください。
 
-【入力テキスト・画像・PDFの取り扱いと埋め込み出力】
-・Webサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要なノイズは完全に無視してください。
-・最初のパート「HARTA DALAM FIRMAN ALLAH」の最初の10分の話については答える必要はありません。完全に無視してください。
-・「2. Permata Rohani」以下のセクションについて、**元の教材のテキスト・質問文を漏れなくそのまま順序通りに出力**してください。
-・各質問文や各段落の直下に「【回答・コメント埋め込み枠】」として、作成したコメント（${targetLang}＋日本語訳）を直接埋め込んで配置してください。
-・「2. Permata Rohani」の聖書通読範囲の質問については、その週の通読範囲内の各章ごとに見出しを立て、各章からの霊的な宝石（コメントと日本語訳）を埋め込んでください。
-・画像が添付されている場合、画像内の挿絵から学べる教訓も該当する質問・段落の直下にコメントとして埋め込んでください。
-
-【出力ルール】
-1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
-2. 各質問に対するコメントは異なった観点から2〜3つ書き出すこと。
-3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
-4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（対象言語の一般的な新世界訳表記に合わせる）。教会用語は使用しない。
-5. 略語（yg など）は使わず、正式な表記にする。
-6. カタカナ発音ガイドは出力しない。
-7. 各質問の見出しには、必ず「元の言語の質問文」と「日本語訳」の両方を併記すること。
-8. コメントが複数（2〜3つ）ある場合は、必ず1つのコメントごとに【■ ${targetLang} ➔ ■ 日本語訳】の順番で交互に出力すること。
-9. **【重要・区切り線】異なる質問の間、および異なるコメントの間には、必ず見やすいようにダッシュ線（例: -------------------------------------）を挿入して、どこで区切られているかをテキスト上で明確にすること。**
-
-【出力フォーマット例】
------------------------------------
-■ 【質問〇 / Pertanyaan 〇】
-[ここに教材元の質問文をそのまま出力]
-（[ここに質問の日本語訳]）
-
-▼ コメント 1
-■ ${targetLang}
-[1つ目の${targetLang}コメント]
-
-■ JP
-[1つ目の日本語訳]
-
---------------------------------------------------
-▼ コメント 2
-■ ${targetLang}
-[2つ目の${targetLang}コメント]
-
-■ JP
-[2つ目の日本語訳]
-
-11. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
+【出力構造と区切りのルール（最重要）】
+1. Webサイトのヘッダーや不要なノイズは無視してください。最初の10分の話は完全に無視してください。
+2. 「2. Permata Rohani」以下の聖書通読範囲のコメントを出力する際、**「各章ごとに含まれるすべての質問とそれに対するコメント」を1つのまとまりとして完全にグループ化し、章ごとに分割**してください。
+3. 異なる章の間には、必ず「===CHAPTER_DIVIDER===」という特定の区切り文字を挿入してください（※通常の質問同士の細かいダッシュ線とは明確に区別してください）。
+4. 各コメントは初心者でも分かりやすい簡単な言葉を使用し、${targetLang}表現（15秒前後）にする。異なった観点から2〜3つ書き出すこと。
+5. コメントが複数ある場合は、1つのコメントごとに【■ ${targetLang} ➔ ■ 日本語訳】の順番で交互に出力すること。
+6. 余計な挨拶や補足説明などは一切出力しない。`;
 
             let combinedInput = inputText;
             if (extractedPdfText) {
                 combinedInput = "--- 【PDF抽出テキスト】 ---\n" + extractedPdfText + "\n\n--- 【追加ユーザーテキスト】 ---\n" + inputText;
             }
 
-            const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメントとその日本語訳を埋め込んで出力してください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
+            const promptText = `以下のテキストおよび画像をもとに、元の教材テキスト文面をすべて維持しながら、それぞれの該当する質問の直下に${targetLang}のコメントと日本語訳を埋め込んでください。特に聖書通読範囲の「章ごとのすべての質問・コメント」のまとまりの間には、必ず「===CHAPTER_DIVIDER===」を入れて章ごとに明確に区切ってください：\n\n${combinedInput}`;
 
             const parts = [{ text: promptText }];
             if (selectedBase64Image) {
@@ -509,8 +464,8 @@
                 if (response.ok) {
                     let rawOutput = data.candidates[0].content.parts[0].text;
 
-                    // ダッシュ線でセクションごとに分割
-                    const rawSections = rawOutput.split(/-{3,}/).filter(sec => sec.trim().length > 0);
+                    // 章の区切り（===CHAPTER_DIVIDER===）ごとに分割
+                    const rawSections = rawOutput.split(/===CHAPTER_DIVIDER===/).filter(sec => sec.trim().length > 0);
 
                     resultsContainer.style.display = "block";
 
@@ -523,7 +478,7 @@
                         // 質問の見出し
                         htmlOutput = htmlOutput.replace(
                             /(■\s*【[^】]+】)/g,
-                            '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 5px; margin-bottom: 8px;">$1</div>'
+                            '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 15px; margin-bottom: 8px;">$1</div>'
                         );
 
                         // コメントの見出し
@@ -547,14 +502,14 @@
                             '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                         );
 
-                        // セクションごとにカードを生成
+                        // 章ごとに1つのカード（ボックス）を生成
                         const sectionCard = document.createElement("div");
                         sectionCard.className = "card";
                         sectionCard.style.cssText = "background-color: #272822; color: #f8f8f2; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08);";
                         
                         sectionCard.innerHTML = `
                             <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-                                <button class="copy-btn" onclick="copySectionText(this)">📋 このセクションをコピー</button>
+                                <button class="copy-btn" onclick="copySectionText(this)">📋 この章をすべてコピー</button>
                             </div>
                             <div class="result-box-content" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${htmlOutput}</div>
                         `;
