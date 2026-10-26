@@ -174,26 +174,8 @@
             background-color: #c92a2a;
         }
 
-        /* 結果ボックス＆右上固定コピーボタン */
-        .result-container {
-            position: relative;
-            background-color: #272822;
-            border-radius: 8px;
-            max-height: 550px;
-            overflow-y: auto;
-            margin-top: 10px;
-        }
-        .copy-btn-header {
-            position: sticky;
-            top: 0;
-            display: flex;
-            justify-content: flex-end;
-            padding: 10px 15px 0 0;
-            z-index: 20;
-            pointer-events: none;
-        }
+        /* 各質問カード内の右上固定コピーボタン */
         .copy-btn {
-            pointer-events: auto;
             background: rgba(255, 255, 255, 0.15);
             color: #f8f8f2;
             border: 1px solid rgba(255, 255, 255, 0.25);
@@ -210,14 +192,6 @@
         .copy-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             border-color: rgba(255, 255, 255, 0.4);
-        }
-        .result-box {
-            color: #f8f8f2;
-            padding: 5px 20px 20px 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 15px;
-            line-height: 1.6;
-            white-space: pre-wrap;
         }
         .error {
             color: #e03131;
@@ -289,15 +263,8 @@
         <div id="status"></div>
     </div>
 
-    <!-- 結果表示カード -->
-    <div class="card" id="resultCard" style="display: none;">
-        <div class="result-container">
-            <div class="copy-btn-header">
-                <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 すべてコピー</button>
-            </div>
-            <div class="result-box" id="resultText"></div>
-        </div>
-    </div>
+    <!-- 結果表示コンテナ（質問ごとにボックスを生成） -->
+    <div id="resultsContainer" style="display: none;"></div>
 
     <script>
         let selectedBase64Image = null;
@@ -395,31 +362,33 @@
             document.getElementById("pdfPreviewContainer").style.display = "none";
         }
 
-        // テキストエリアと結果をすべてクリアする関数（GO!ボタンの無効化も強制解除）
+        // テキストエリアと結果をすべてクリアする関数
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
-            document.getElementById("resultCard").style.display = "none";
+            const resultsContainer = document.getElementById("resultsContainer");
+            resultsContainer.style.display = "none";
+            resultsContainer.innerHTML = "";
             document.getElementById("submitBtn").disabled = false;
             removeImage();
             removePdf();
             document.getElementById("inputText").focus();
         }
 
-        // 結果をすべてコピーする関数
-        function copyResult() {
-            const resultTextEl = document.getElementById("resultText");
-            const textToCopy = resultTextEl.innerText;
+        // 各質問ボックスごとのコピー関数
+        function copyQuestionCard(buttonEl) {
+            const cardEl = buttonEl.closest('.card');
+            const contentEl = cardEl.querySelector('.result-box');
+            const textToCopy = contentEl.innerText;
 
             navigator.clipboard.writeText(textToCopy).then(() => {
-                const copyBtn = document.getElementById("copyBtn");
-                copyBtn.textContent = "✅ コピー完了！";
-                copyBtn.style.backgroundColor = "#20c997";
-                copyBtn.style.borderColor = "#20c997";
+                buttonEl.textContent = "✅ コピー完了！";
+                buttonEl.style.backgroundColor = "#20c997";
+                buttonEl.style.borderColor = "#20c997";
                 setTimeout(() => {
-                    copyBtn.textContent = "📋 すべてコピー";
-                    copyBtn.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
-                    copyBtn.style.borderColor = "rgba(255, 255, 255, 0.25)";
+                    buttonEl.textContent = "📋 この質問をすべてコピー";
+                    buttonEl.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
+                    buttonEl.style.borderColor = "rgba(255, 255, 255, 0.25)";
                 }, 2000);
             }).catch(err => {
                 alert("コピーに失敗しました: " + err);
@@ -431,8 +400,7 @@
             const inputText = document.getElementById("inputText").value.trim();
             const targetLang = document.getElementById("targetLanguage").value;
             const statusDiv = document.getElementById("status");
-            const resultCard = document.getElementById("resultCard");
-            const resultText = document.getElementById("resultText");
+            const resultsContainer = document.getElementById("resultsContainer");
             const submitBtn = document.getElementById("submitBtn");
 
             if (!apiKey) {
@@ -447,70 +415,45 @@
             // 状態更新
             statusDiv.innerHTML = '<div class="loading">作成中...</div>';
             submitBtn.disabled = true;
-            resultCard.style.display = "none";
+            resultsContainer.style.display = "none";
+            resultsContainer.innerHTML = "";
 
-            // システムプロンプト（整合性チェック機能を追加）
+            // システムプロンプト（各質問ごとに区切り文字を入れるよう指示）
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従ってノートを作成してください：
 
 【🚨 ファイルの整合性チェック（最重要）】
-- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容（週のテーマ、聖書通読範囲、記事のタイトルなど）と、画像に描かれているビジュアル・内容が**同じ範囲・同じ週のものとして一致しているか**を最初に厳密に確認してください。
-- もし異なる週や異なるページのファイルが間違えて組み合わせてアップロードされている（内容が一致していない）と判断した場合、ノートの作成を一切行わず、**出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力**して処理を終了してください。
+- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容と画像に描かれている内容が同じ範囲・同じ週のものとして一致しているかを最初に厳密に確認してください。
+- 一致していない場合は出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力して処理を終了してください。
 
 【重要：言語および文字の指定】
 - 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用して出力してください。
 
 【入力テキスト・画像・PDFの取り扱いと埋め込み出力】
-・Webサイトのヘッダー、フッター、メニュー、ナビゲーション、著作権表記などの不要なノイズは完全に無視してください。
-・最初のパート「HARTA DALAM FIRMAN ALLAH」の最初の10分の話については答える必要はありません。完全に無視してください。
-・「2. Permata Rohani」以下のセクションについて、**元の教材のテキスト・質問文を漏れなくそのまま順序通りに出力**してください。
-・各質問文や各段落の直下に「【回答・コメント埋め込み枠】」として、作成したコメント（${targetLang}＋日本語訳）を直接埋め込んで配置してください。
-・「2. Permata Rohani」の聖書通読範囲の質問については、その週の通読範囲内の各章ごとに見出しを立て、各章からの霊的な宝石（コメントと日本語訳）を埋め込んでください。
-・画像が添付されている場合、画像内の挿絵から学べる教訓も該当する質問・段落の直下にコメントとして埋め込んでください。
+・Webサイトのヘッダー、フッター、メニュー、著作権表記などの不要なノイズは完全に無視してください。
+・最初のパートの最初の10分の話については完全に無視してください。
+・「2. Permata Rohani」以下のセクションについて、元の教材のテキスト・質問文を漏れなくそのまま順序通りに出力してください。
+・各質問文の直下に、作成したコメント（${targetLang}＋日本語訳）を埋め込んで配置してください。
 
 【出力ルール】
-1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（エホバの証人の集会でのコメント風にし、長さは15秒前後）にする。
-2. 各質問に対するコメントは異なった観点から2〜3つ書き出すこと。
+1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（15秒前後）にする。
+2. **各質問に対するコメントは異なった観点から必ず2〜3つ書き出すこと。**
 3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
-4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる（対象言語の一般的な新世界訳表記に合わせる）。教会用語は使用しない。
-5. 略語（yg など）は使わず、正式な表記にする。
+4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる。教会用語は使用しない。
+5. 略語は使わず、正式な表記にする。
 6. カタカナ発音ガイドは出力しない。
 7. 各質問の見出しには、必ず「元の言語の質問文」と「日本語訳」の両方を併記すること。
-8. コメントが複数（2〜3つ）ある場合は、必ず1つのコメントごとに【■ ${targetLang} ➔ ■ 日本語訳】の順番で交互に出力すること。
-9. **【重要・区切り線】異なる質問の間、および異なるコメントの間には、必ず見やすいようにダッシュ線（例: -------------------------------------）を挿入して、どこで区切られているかをテキスト上で明確にすること。**
+8. コメントが複数ある場合は、必ず1つのコメントごとに【■ ${targetLang} ➔ ■ 日本語訳】の順番で交互に出力すること。
+9. **【重要・質問ごとの区切り】異なる質問の間には、必ず「===QUESTION_DIVIDER===」という特定の区切り文字を挿入してください。これにより、1つの質問とそれに対する複数のコメント候補が1つのまとまりとしてグループ化されるようにしてください。**
+10. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
 
-【出力フォーマット例】
------------------------------------
-■ 【質問〇 / Pertanyaan 〇】
-[ここに教材元の質問文をそのまま出力]
-（[ここに質問の日本語訳]）
-
-▼ コメント 1
-■ ${targetLang}
-[1つ目の${targetLang}コメント]
-
-■ JP
-[1つ目の日本語訳]
-
---------------------------------------------------
-▼ コメント 2
-■ ${targetLang}
-[2つ目の${targetLang}コメント]
-
-■ JP
-[2つ目の日本語訳]
-
-11. 余計な文法解説や挨拶、補足説明などは一切出力しない。`;
-
-            // 入力データ（テキスト＋PDFテキスト＋ユーザー記入分）を統合
             let combinedInput = inputText;
             if (extractedPdfText) {
                 combinedInput = "--- 【PDF抽出テキスト】 ---\n" + extractedPdfText + "\n\n--- 【追加ユーザーテキスト】 ---\n" + inputText;
             }
 
-            const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面をすべて維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメントとその日本語訳を埋め込んで出力してください。必ずダッシュ線で区切って出力してください：\n\n${combinedInput}`;
+            const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面を維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメント（2〜3つの候補）とその日本語訳を埋め込んでください。**異なる質問の間には必ず「===QUESTION_DIVIDER===」を挿入してください**：\n\n${combinedInput}`;
 
-            // リクエストパーツの構築（テキスト ＋ 画像も両方あれば両方含める）
             const parts = [{ text: promptText }];
             if (selectedBase64Image) {
                 parts.unshift({
@@ -521,7 +464,6 @@
                 });
             }
 
-            // Gemini API呼び出し (gemini-3.8-flash)
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
             const requestBody = {
@@ -545,41 +487,59 @@
                 if (response.ok) {
                     let rawOutput = data.candidates[0].content.parts[0].text;
 
-                    // 安全なHTMLエスケープ処理
-                    let htmlOutput = rawOutput
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;");
+                    // 質問の区切り（===QUESTION_DIVIDER===）ごとに分割してカードを生成
+                    const questionBlocks = rawOutput.split(/===QUESTION_DIVIDER===/).filter(block => block.trim().length > 0);
 
-                    // 質問の見出し（■ 【...】）の装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(■\s*【[^】]+】)/g,
-                        '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 15px; margin-bottom: 8px;">$1</div>'
-                    );
+                    resultsContainer.style.display = "block";
 
-                    // コメントの見出し（▼ コメント 1 ...）の装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(▼\s*コメント\s*\d+[^\n]*)/g,
-                        '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
-                    );
+                    questionBlocks.forEach((blockText) => {
+                        let htmlOutput = blockText
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;");
 
-                    // 対象言語の見出しを緑色に装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
-                        function(match) {
-                            if (match.includes("JP") || match.includes("日本語訳")) return match;
-                            return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
-                        }
-                    );
+                        // 質問の見出し（■ 【...】）の装飾
+                        htmlOutput = htmlOutput.replace(
+                            /(■\s*【[^】]+】)/g,
+                            '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 5px; margin-bottom: 8px;">$1</div>'
+                        );
 
-                    // 日本語訳の見出し（■ JP / ■ 日本語訳）を黄土色に装飾
-                    htmlOutput = htmlOutput.replace(
-                        /(■\s*(?:JP|日本語訳))/g,
-                        '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
-                    );
+                        // コメントの見出し（▼ コメント 1 ...）の装飾
+                        htmlOutput = htmlOutput.replace(
+                            /(▼\s*コメント\s*\d+[^\n]*)/g,
+                            '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
+                        );
 
-                    resultText.innerHTML = htmlOutput;
-                    resultCard.style.display = "block";
+                        // 対象言語の見出しを緑色に装飾
+                        htmlOutput = htmlOutput.replace(
+                            /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
+                            function(match) {
+                                if (match.includes("JP") || match.includes("日本語訳")) return match;
+                                return '<div style="color: #98c379; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">' + match + '</div>';
+                            }
+                        );
+
+                        // 日本語訳の見出し（■ JP / ■ 日本語訳）を黄土色に装飾
+                        htmlOutput = htmlOutput.replace(
+                            /(■\s*(?:JP|日本語訳))/g,
+                            '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
+                        );
+
+                        // 質問ごとに1つのカード（ボックス）を生成
+                        const questionCard = document.createElement("div");
+                        questionCard.className = "card";
+                        questionCard.style.cssText = "background-color: #272822; color: #f8f8f2; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08);";
+                        
+                        questionCard.innerHTML = `
+                            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                                <button class="copy-btn" onclick="copyQuestionCard(this)">📋 この質問をすべてコピー</button>
+                            </div>
+                            <div class="result-box" style="padding: 5px 0 0 0;">${htmlOutput}</div>
+                        `;
+
+                        resultsContainer.appendChild(questionCard);
+                    });
+
                     statusDiv.innerHTML = "";
                 } else {
                     statusDiv.innerHTML = `<div class="error">❌ エラーが発生しました: ${data.error.message}</div>`;
