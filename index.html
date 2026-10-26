@@ -63,7 +63,7 @@
             resize: vertical;
         }
        
-        /* 下段のボタン群：4つの等分グリッド（上下の幅を完全に同期） */
+        /* 下段のボタン群：高さを42pxに完全固定してズレを防止 */
         .btn-group {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -71,8 +71,9 @@
             margin-top: 10px;
         }
         .btn-group button, .btn-group .image-input-btn, .btn-group .pdf-input-btn {
+            height: 42px;
             border: none;
-            padding: 12px 4px;
+            padding: 0 4px;
             font-size: 13px;
             font-weight: bold;
             border-radius: 6px;
@@ -113,7 +114,7 @@
             background-color: #5a6268;
         }
 
-        /* プレビュー領域：下段と同じ4列グリッドにして境界線を完璧に一致させる */
+        /* プレビュー領域：4列グリッド（高さを42pxに統一） */
         .preview-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -121,7 +122,7 @@
             margin-bottom: 10px;
         }
        
-        /* 画像プレビュー：左側の2カラム分（GO!と画像の幅）を使用 */
+        /* 画像プレビュー：左側2カラム */
         .image-preview {
             width: 100%;
             height: 42px;
@@ -132,7 +133,7 @@
             grid-column: span 2;
         }
        
-        /* PDF表示領域：左側の2カラム分を使用 */
+        /* PDF表示領域：左側2カラム */
         .pdf-badge {
             background-color: #e9ecef;
             border: 1px solid #ced4da;
@@ -151,7 +152,7 @@
             grid-column: span 2;
         }
 
-        /* 削除ボタン：右側の2カラム分（PDFと消去の幅）を使用 */
+        /* 削除ボタン：右側2カラム（高さを42pxに完全一致） */
         .remove-btn {
             background-color: #e03131;
             color: white;
@@ -164,7 +165,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: none;
+            border: 1px solid transparent;
             height: 42px;
             box-sizing: border-box;
             grid-column: span 2;
@@ -271,7 +272,6 @@
         let selectedMimeType = null;
         let extractedPdfText = "";
 
-        // ページ読み込み時に保存されたAPIキーを復元
         window.onload = function() {
             const savedKey = localStorage.getItem("gemini_api_key");
             if (savedKey) {
@@ -279,7 +279,6 @@
             }
         };
 
-        // APIキーの開閉切り替え
         function toggleApiKey() {
             const content = document.getElementById("apiKeyContent");
             const arrow = document.getElementById("apiToggleArrow");
@@ -292,13 +291,11 @@
             }
         }
 
-        // APIキーの保存
         function saveApiKey() {
             const key = document.getElementById("apiKey").value.trim();
             localStorage.setItem("gemini_api_key", key);
         }
 
-        // 画像選択処理（PDFとは独立して保持）
         function handleImageSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -315,7 +312,6 @@
             reader.readAsDataURL(file);
         }
 
-        // 画像削除処理
         function removeImage() {
             selectedBase64Image = null;
             selectedMimeType = null;
@@ -324,7 +320,6 @@
             document.getElementById("imagePreviewContainer").style.display = "none";
         }
 
-        // PDF選択＆テキスト抽出処理（画像とは独立して保持）
         async function handlePdfSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -355,14 +350,12 @@
             }
         }
 
-        // PDF削除処理
         function removePdf() {
             extractedPdfText = "";
             document.getElementById("pdfInput").value = "";
             document.getElementById("pdfPreviewContainer").style.display = "none";
         }
 
-        // テキストエリアと結果をすべてクリアする関数
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
@@ -375,7 +368,6 @@
             document.getElementById("inputText").focus();
         }
 
-        // 各質問ボックスごとのコピー関数
         function copyQuestionCard(buttonEl) {
             const cardEl = buttonEl.closest('.card');
             const contentEl = cardEl.querySelector('.result-box');
@@ -412,13 +404,11 @@
                 return;
             }
 
-            // 状態更新
             statusDiv.innerHTML = '<div class="loading">作成中...</div>';
             submitBtn.disabled = true;
             resultsContainer.style.display = "none";
             resultsContainer.innerHTML = "";
 
-            // システムプロンプト（各質問ごとに区切り文字を入れるよう指示）
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従ってノートを作成してください：
 
@@ -487,7 +477,6 @@
                 if (response.ok) {
                     let rawOutput = data.candidates[0].content.parts[0].text;
 
-                    // 質問の区切り（===QUESTION_DIVIDER===）ごとに分割してカードを生成
                     const questionBlocks = rawOutput.split(/===QUESTION_DIVIDER===/).filter(block => block.trim().length > 0);
 
                     resultsContainer.style.display = "block";
@@ -498,19 +487,16 @@
                             .replace(/</g, "&lt;")
                             .replace(/>/g, "&gt;");
 
-                        // 質問の見出し（■ 【...】）の装飾
                         htmlOutput = htmlOutput.replace(
                             /(■\s*【[^】]+】)/g,
                             '<div style="font-weight: bold; color: #61afef; font-size: 16px; margin-top: 5px; margin-bottom: 8px;">$1</div>'
                         );
 
-                        // コメントの見出し（▼ コメント 1 ...）の装飾
                         htmlOutput = htmlOutput.replace(
                             /(▼\s*コメント\s*\d+[^\n]*)/g,
                             '<div style="font-weight: bold; color: #abb2bf; font-size: 14px; margin-top: 15px; padding-bottom: 2px; border-bottom: 1px dashed #444;">$1</div>'
                         );
 
-                        // 対象言語の見出しを緑色に装飾
                         htmlOutput = htmlOutput.replace(
                             /(■\s*(?:インドネシア語|中国語（簡体字）|英語|タガログ語|ベトナム語|日本語|[^<>\n]+))/g,
                             function(match) {
@@ -519,13 +505,11 @@
                             }
                         );
 
-                        // 日本語訳の見出し（■ JP / ■ 日本語訳）を黄土色に装飾
                         htmlOutput = htmlOutput.replace(
                             /(■\s*(?:JP|日本語訳))/g,
                             '<div style="color: #e5c07b; font-weight: bold; margin-top: 10px; margin-bottom: 4px;">$1</div>'
                         );
 
-                        // 質問ごとに1つのカード（ボックス）を生成
                         const questionCard = document.createElement("div");
                         questionCard.className = "card";
                         questionCard.style.cssText = "background-color: #272822; color: #f8f8f2; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08);";
