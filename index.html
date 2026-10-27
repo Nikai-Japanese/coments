@@ -62,7 +62,7 @@
             height: 100px;
             resize: vertical;
         }
-       
+        
         /* 下段のボタン群：高さを42pxに完全固定してズレを防止 */
         .btn-group {
             display: grid;
@@ -121,7 +121,7 @@
             gap: 8px;
             margin-bottom: 10px;
         }
-       
+        
         /* 画像プレビュー：左側2カラム */
         .image-preview {
             width: 100%;
@@ -132,7 +132,7 @@
             box-sizing: border-box;
             grid-column: span 2;
         }
-       
+        
         /* PDF表示領域：左側2カラム */
         .pdf-badge {
             background-color: #e9ecef;
@@ -247,8 +247,8 @@
             <button type="button" class="remove-btn" onclick="removePdf()">❌ PDF削除</button>
         </div>
 
-        <textarea id="inputText" placeholder=""></textarea>
-       
+        <textarea id="inputText" placeholder="※ここに直接スクショ画像を貼り付け（Ctrl+V / Cmd+V）することもできます"></textarea>
+        
         <!-- ボタン群（4つ均等：GO、画像選択、PDF選択、消去） -->
         <div class="btn-group">
             <button id="submitBtn" class="btn-primary" onclick="generateComment()">GO!</button>
@@ -277,6 +277,20 @@
             if (savedKey) {
                 document.getElementById("apiKey").value = savedKey;
             }
+
+            // ページ全体でのクリップボードからの貼り付け（ペースト）イベントを監視
+            window.addEventListener('paste', function(event) {
+                const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        const blob = item.getAsFile();
+                        processImageFile(blob);
+                        event.preventDefault(); // デフォルトのペースト動作を防ぐ
+                        break;
+                    }
+                }
+            });
         };
 
         function toggleApiKey() {
@@ -296,8 +310,7 @@
             localStorage.setItem("gemini_api_key", key);
         }
 
-        function handleImageSelect(event) {
-            const file = event.target.files[0];
+        function processImageFile(file) {
             if (!file) return;
 
             selectedMimeType = file.type;
@@ -305,11 +318,16 @@
             reader.onload = function(e) {
                 const dataUrl = e.target.result;
                 selectedBase64Image = dataUrl.split(',')[1];
-               
+                
                 document.getElementById("imagePreview").src = dataUrl;
                 document.getElementById("imagePreviewContainer").style.display = "grid";
             };
             reader.readAsDataURL(file);
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            processImageFile(file);
         }
 
         function removeImage() {
@@ -427,7 +445,7 @@
 
 【出力ルール】
 1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（15秒前後）にする。
-2. **各質問に対するコメントは異なった観点から必ず2〜3つ書き出すこと。**
+​2. **各質問に対するコメントは異なった観点から必ず2〜3つ書き出すこと。**
 3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
 4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる。教会用語は使用しない。
 5. 略語は使わず、正式な表記にする。
