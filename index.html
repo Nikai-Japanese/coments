@@ -63,7 +63,7 @@
             resize: vertical;
         }
         
-        /* 下段のボタン群：5つに対応できるよう調整（GO、画像、PDF、動画、消去） */
+        /* 下段のボタン群：5つに対応（GO、画像、PDF、動画、消去） */
         .btn-group {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -221,9 +221,12 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
-        <!-- 出力言語設定 -->
+        <!-- 出力言語設定 ＆ 経過時間表示（同じ行の一番右に配置） -->
         <div style="margin-bottom: 12px;">
-            <label for="targetLanguage" style="font-size: 13px; margin-bottom: 4px;">🗣️ 作成・出力言語（会衆の言語）</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label for="targetLanguage" style="font-size: 13px; margin-bottom: 0;">🗣️ 作成・出力言語（会衆の言語）</label>
+                <span id="timerDisplay" style="font-size: 13px; font-weight: bold; color: #1c7ed6;">⏱️ 0分0秒</span>
+            </div>
             <select id="targetLanguage">
                 <option value="インドネシア語" selected>インドネシア語</option>
                 <option value="中国語（簡体字）">中国語（簡体字）</option>
@@ -282,6 +285,7 @@
         let selectedBase64Video = null;
         let selectedVideoMimeType = null;
         let selectedVideoName = "";
+        let timerInterval = null;
 
         window.onload = function() {
             const savedKey = localStorage.getItem("gemini_api_key");
@@ -386,7 +390,6 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // ブラウザ側でのメモリ負荷やAPIサイズ制限（インラインの場合は大きすぎないもの）を考慮
             if (file.size > 20 * 1024 * 1024) {
                 alert("⚠️ 動画ファイルが大きすぎます（20MB以下を推奨します）。短いクリップや圧縮された動画をご利用ください。");
             }
@@ -427,6 +430,8 @@
             resultsContainer.style.display = "none";
             resultsContainer.innerHTML = "";
             document.getElementById("submitBtn").disabled = false;
+            document.getElementById("timerDisplay").textContent = "⏱️ 0分0秒";
+            if (timerInterval) clearInterval(timerInterval);
             removeImage();
             removePdf();
             removeVideo();
@@ -459,6 +464,7 @@
             const statusDiv = document.getElementById("status");
             const resultsContainer = document.getElementById("resultsContainer");
             const submitBtn = document.getElementById("submitBtn");
+            const timerDisplay = document.getElementById("timerDisplay");
 
             if (!apiKey) {
                 statusDiv.innerHTML = '<div class="error">⚠️ APIキーを入力してください。</div>';
@@ -473,6 +479,16 @@
             submitBtn.disabled = true;
             resultsContainer.style.display = "none";
             resultsContainer.innerHTML = "";
+
+            // タイマー開始
+            const startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsedSeconds / 60);
+                const seconds = elapsedSeconds % 60;
+                timerDisplay.textContent = `⏱️ ${minutes}分${seconds}秒`;
+            }, 1000);
 
             const systemInstruction = `あなたはエホバの証人の${targetLang}会衆で発表する日本人奉仕者のための優秀なアシスタントです。
 以下のルールに厳密に従ってノートを作成してください：
@@ -510,7 +526,6 @@
 
             const parts = [{ text: promptText }];
             
-            // 順番に考慮して添付データを追加
             if (selectedBase64Video) {
                 parts.unshift({
                     inlineData: {
@@ -547,6 +562,9 @@
                 });
 
                 const data = await response.json();
+
+                // 処理完了（成功・失敗問わずタイマー停止）
+                if (timerInterval) clearInterval(timerInterval);
 
                 if (response.ok) {
                     let rawOutput = data.candidates[0].content.parts[0].text;
@@ -603,6 +621,7 @@
                     statusDiv.innerHTML = `<div class="error">❌ エラーが発生しました: ${data.error.message}</div>`;
                 }
             } catch (err) {
+                if (timerInterval) clearInterval(timerInterval);
                 statusDiv.innerHTML = `<div class="error">❌ 通信エラーが発生しました: ${err.message}</div>`;
             } finally {
                 submitBtn.disabled = false;
