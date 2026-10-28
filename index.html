@@ -63,18 +63,18 @@
             resize: vertical;
         }
         
-        /* 下段のボタン群：高さを42pxに完全固定してズレを防止 */
+        /* 下段のボタン群：5つに対応できるよう調整（GO、画像、PDF、動画、消去） */
         .btn-group {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
             margin-top: 10px;
         }
-        .btn-group button, .btn-group .image-input-btn, .btn-group .pdf-input-btn {
+        .btn-group button, .btn-group .image-input-btn, .btn-group .pdf-input-btn, .btn-group .video-input-btn {
             height: 42px;
             border: none;
-            padding: 0 4px;
-            font-size: 13px;
+            padding: 0 2px;
+            font-size: 12px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
@@ -98,12 +98,12 @@
             background-color: #adb5bd;
             cursor: not-allowed;
         }
-        .image-input-btn, .pdf-input-btn {
+        .image-input-btn, .pdf-input-btn, .video-input-btn {
             background-color: #e9ecef;
             color: #495057;
             border: 1px solid #ced4da;
         }
-        .image-input-btn:hover, .pdf-input-btn:hover {
+        .image-input-btn:hover, .pdf-input-btn:hover, .video-input-btn:hover {
             background-color: #dee2e6;
         }
         .clear-btn {
@@ -114,7 +114,7 @@
             background-color: #5a6268;
         }
 
-        /* プレビュー領域：4列グリッド（高さを42pxに統一） */
+        /* プレビュー領域：グリッド */
         .preview-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -133,8 +133,8 @@
             grid-column: span 2;
         }
         
-        /* PDF表示領域：左側2カラム */
-        .pdf-badge {
+        /* PDF・動画バッジ表示領域：左側2カラム */
+        .file-badge {
             background-color: #e9ecef;
             border: 1px solid #ced4da;
             border-radius: 6px;
@@ -152,7 +152,7 @@
             grid-column: span 2;
         }
 
-        /* 削除ボタン：右側2カラム（高さを42pxに完全一致） */
+        /* 削除ボタン：右側2カラム */
         .remove-btn {
             background-color: #e03131;
             color: white;
@@ -175,7 +175,6 @@
             background-color: #c92a2a;
         }
 
-        /* 各質問カード内の右上固定コピーボタン */
         .copy-btn {
             background: rgba(255, 255, 255, 0.15);
             color: #f8f8f2;
@@ -222,7 +221,7 @@
 
     <!-- テキスト入力カード -->
     <div class="card">
-        <!-- 出力言語設定（選択式：指定の6言語） -->
+        <!-- 出力言語設定 -->
         <div style="margin-bottom: 12px;">
             <label for="targetLanguage" style="font-size: 13px; margin-bottom: 4px;">🗣️ 作成・出力言語（会衆の言語）</label>
             <select id="targetLanguage">
@@ -235,21 +234,27 @@
             </select>
         </div>
 
-        <!-- 選択画像プレビュー領域 -->
+        <!-- 画像プレビュー領域 -->
         <div id="imagePreviewContainer" class="preview-container" style="display: none;">
             <img id="imagePreview" class="image-preview" src="" alt="プレビュー">
             <button type="button" class="remove-btn" onclick="removeImage()">❌ 画像削除</button>
         </div>
 
-        <!-- 選択PDFプレビュー領域 -->
+        <!-- PDFプレビュー領域 -->
         <div id="pdfPreviewContainer" class="preview-container" style="display: none;">
-            <div id="pdfBadge" class="pdf-badge">📄 PDF読み込み済み</div>
+            <div id="pdfBadge" class="file-badge">📄 PDF読み込み済み</div>
             <button type="button" class="remove-btn" onclick="removePdf()">❌ PDF削除</button>
+        </div>
+
+        <!-- 動画プレビュー領域 -->
+        <div id="videoPreviewContainer" class="preview-container" style="display: none;">
+            <div id="videoBadge" class="file-badge">🎬 動画読み込み済み</div>
+            <button type="button" class="remove-btn" onclick="removeVideo()">❌ 動画削除</button>
         </div>
 
         <textarea id="inputText" placeholder="※スクショ画像コピー (Shift+ctrl+cmd+4)；貼り付け (Cmd+V）"></textarea>
         
-        <!-- ボタン群（4つ均等：GO、画像選択、PDF選択、消去） -->
+        <!-- ボタン群（5つ均等：GO、画像、PDF、動画、消去） -->
         <div class="btn-group">
             <button id="submitBtn" class="btn-primary" onclick="generateComment()">GO!</button>
            
@@ -258,19 +263,25 @@
            
             <label class="pdf-input-btn" for="pdfInput">📄 PDF</label>
             <input type="file" id="pdfInput" accept="application/pdf" style="display: none;" onchange="handlePdfSelect(event)">
+
+            <label class="video-input-btn" for="videoInput">🎬 動画</label>
+            <input type="file" id="videoInput" accept="video/*" style="display: none;" onchange="handleVideoSelect(event)">
            
             <button class="clear-btn" onclick="clearText()">消去</button>
         </div>
         <div id="status"></div>
     </div>
 
-    <!-- 結果表示コンテナ（質問ごとにボックスを生成） -->
+    <!-- 結果表示コンテナ -->
     <div id="resultsContainer" style="display: none;"></div>
 
     <script>
         let selectedBase64Image = null;
         let selectedMimeType = null;
         let extractedPdfText = "";
+        let selectedBase64Video = null;
+        let selectedVideoMimeType = null;
+        let selectedVideoName = "";
 
         window.onload = function() {
             const savedKey = localStorage.getItem("gemini_api_key");
@@ -286,7 +297,7 @@
                     if (item.kind === 'file' && item.type.startsWith('image/')) {
                         const blob = item.getAsFile();
                         processImageFile(blob);
-                        event.preventDefault(); // デフォルトのペースト動作を防ぐ
+                        event.preventDefault();
                         break;
                     }
                 }
@@ -312,13 +323,11 @@
 
         function processImageFile(file) {
             if (!file) return;
-
             selectedMimeType = file.type;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const dataUrl = e.target.result;
                 selectedBase64Image = dataUrl.split(',')[1];
-                
                 document.getElementById("imagePreview").src = dataUrl;
                 document.getElementById("imagePreviewContainer").style.display = "grid";
             };
@@ -326,8 +335,7 @@
         }
 
         function handleImageSelect(event) {
-            const file = event.target.files[0];
-            processImageFile(file);
+            processImageFile(event.target.files[0]);
         }
 
         function removeImage() {
@@ -374,6 +382,44 @@
             document.getElementById("pdfPreviewContainer").style.display = "none";
         }
 
+        function handleVideoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // ブラウザ側でのメモリ負荷やAPIサイズ制限（インラインの場合は大きすぎないもの）を考慮
+            if (file.size > 20 * 1024 * 1024) {
+                alert("⚠️ 動画ファイルが大きすぎます（20MB以下を推奨します）。短いクリップや圧縮された動画をご利用ください。");
+            }
+
+            const statusDiv = document.getElementById("status");
+            statusDiv.innerHTML = '<div class="loading">動画を読み込み中...</div>';
+
+            selectedVideoMimeType = file.type || "video/mp4";
+            selectedVideoName = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                selectedBase64Video = dataUrl.split(',')[1];
+                document.getElementById("videoBadge").textContent = `🎬 ${file.name}`;
+                document.getElementById("videoPreviewContainer").style.display = "grid";
+                statusDiv.innerHTML = "";
+            };
+            reader.onerror = function(err) {
+                statusDiv.innerHTML = `<div class="error">❌ 動画の読み込みに失敗しました。</div>`;
+                document.getElementById("videoInput").value = "";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeVideo() {
+            selectedBase64Video = null;
+            selectedVideoMimeType = null;
+            selectedVideoName = "";
+            document.getElementById("videoInput").value = "";
+            document.getElementById("videoPreviewContainer").style.display = "none";
+        }
+
         function clearText() {
             document.getElementById("inputText").value = "";
             document.getElementById("status").innerHTML = "";
@@ -383,6 +429,7 @@
             document.getElementById("submitBtn").disabled = false;
             removeImage();
             removePdf();
+            removeVideo();
             document.getElementById("inputText").focus();
         }
 
@@ -417,12 +464,12 @@
                 statusDiv.innerHTML = '<div class="error">⚠️ APIキーを入力してください。</div>';
                 return;
             }
-            if (!inputText && !selectedBase64Image && !extractedPdfText) {
-                statusDiv.innerHTML = '<div class="error">⚠️ テキスト、画像、またはPDFを入力してください。</div>';
+            if (!inputText && !selectedBase64Image && !extractedPdfText && !selectedBase64Video) {
+                statusDiv.innerHTML = '<div class="error">⚠️ テキスト、画像、PDF、または動画を入力してください。</div>';
                 return;
             }
 
-            statusDiv.innerHTML = '<div class="loading">作成中...</div>';
+            statusDiv.innerHTML = '<div class="loading">動画とテキストを分析・作成中...（少し時間がかかります）</div>';
             submitBtn.disabled = true;
             resultsContainer.style.display = "none";
             resultsContainer.innerHTML = "";
@@ -431,21 +478,20 @@
 以下のルールに厳密に従ってノートを作成してください：
 
 【🚨 ファイルの整合性チェック（最重要）】
-- もし「PDF」と「画像」の両方が同時にアップロードされている場合、PDFのテキスト内容と画像に描かれている内容が同じ範囲・同じ週のものとして一致しているかを最初に厳密に確認してください。
-- 一致していない場合は出力の最初に必ず「⚠️ PDFと画像の内容が一致していません！同じ範囲のファイルをアップロードしてください。」という警告文のみを出力して処理を終了してください。
+- アップロードされたテキスト、画像、PDF、動画の内容やテーマが同じ範囲・同じ週のものとして一致しているかを確認してください。
 
 【重要：言語および文字の指定】
 - 出力言語として「中国語（簡体字）」が選択されている場合は、繁体字を一切使用せず、必ず中国本土の簡体字のみを使用して出力してください。
 
-【入力テキスト・画像・PDFの取り扱いと埋め込み出力】
+【入力テキスト・画像・PDF・動画の取り扱いと埋め込み出力】
 ・Webサイトのヘッダー、フッター、メニュー、著作権表記などの不要なノイズは完全に無視してください。
-・最初のパートの最初の10分の話については完全に無視してください。
+・動画が含まれている場合、動画内で話されている内容、映像表現、インタビューや実演のポイントをしっかり読み取り、コメントの内容に反映させてください。
 ・「2. Permata Rohani」以下のセクションについて、元の教材のテキスト・質問文を漏れなくそのまま順序通りに出力してください。
 ・各質問文の直下に、作成したコメント（${targetLang}＋日本語訳）を埋め込んで配置してください。
 
 【出力ルール】
 1. 各コメントは、初心者でも分かりやすい簡単な言葉を使用し、簡潔な${targetLang}表現（15秒前後）にする。
-​2. **各質問に対するコメントは異なった観点から必ず2〜3つ書き出すこと。**
+2. **各質問に対するコメントは異なった観点から必ず2〜3つ書き出すこと。**
 3. 聖句からのコメントは、必ずどこの何章何節かを明記すること。
 4. 固有名詞はエホバの証人の新世界訳聖書の表記に合わせる。教会用語は使用しない。
 5. 略語は使わず、正式な表記にする。
@@ -460,9 +506,19 @@
                 combinedInput = "--- 【PDF抽出テキスト】 ---\n" + extractedPdfText + "\n\n--- 【追加ユーザーテキスト】 ---\n" + inputText;
             }
 
-            const promptText = `以下のテキストおよび画像に含まれるすべての質問や学習ポイントをもとに、元の教材テキスト文面を維持し、それぞれの該当する質問の直下に${targetLang}の集会用コメント（2〜3つの候補）とその日本語訳を埋め込んでください。**異なる質問の間には必ず「===QUESTION_DIVIDER===」を挿入してください**：\n\n${combinedInput}`;
+            const promptText = `以下のテキスト、PDF、画像、および動画に含まれるすべての質問や学習ポイント、動画の内容をもとに、それぞれの該当する質問の直下に${targetLang}の集会用コメント（2〜3つの候補）とその日本語訳を埋め込んでください。**異なる質問の間には必ず「===QUESTION_DIVIDER===」を挿入してください**：\n\n${combinedInput}`;
 
             const parts = [{ text: promptText }];
+            
+            // 順番に考慮して添付データを追加
+            if (selectedBase64Video) {
+                parts.unshift({
+                    inlineData: {
+                        mimeType: selectedVideoMimeType,
+                        data: selectedBase64Video
+                    }
+                });
+            }
             if (selectedBase64Image) {
                 parts.unshift({
                     inlineData: {
@@ -472,7 +528,7 @@
                 });
             }
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
             const requestBody = {
                 systemInstruction: {
